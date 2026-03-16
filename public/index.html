@@ -389,11 +389,15 @@ function renderGameCard(gp){
   var live=getLiveData(gp.gamePk);
   var isLive=live&&live.status==='Live';
   var isFinal=live&&live.status==='Final';
+  var isCancelled=isFinal&&live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0;
+  if(isCancelled)isFinal=false;
   var predictedWinner=aWin?gp.away:gp.home;
 
   // Status — mode-aware
   var statusHTML='';
-  if(isLive){
+  if(isCancelled){
+    statusHTML='<span class="st-badge st-final">Cancelled</span>';
+  } else if(isLive){
     statusHTML='<span class="st-badge st-live"><span class="live-dot" style="width:6px;height:6px;margin-right:3px;vertical-align:middle"></span> '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span>';
   } else if(isFinal){
     if(mode==='game'){
@@ -448,7 +452,9 @@ function renderGameCard(gp){
 
   // Game mode content
   var gameContent='';
-  if(mode==='game'){
+  if(isCancelled){
+    gameContent='<div style="padding:24px;text-align:center;font-size:13px;color:var(--tx3)">Game cancelled / not played</div>';
+  } else if(mode==='game'){
     if(isFinal){
       gameContent=scoreSection+liveBoard
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
@@ -537,6 +543,7 @@ function renderRecordBar(){
     data.gamePreds.forEach(function(gp){
       var live=getLiveData(gp.gamePk);
       if(!live||live.status!=='Final'){pending++;return}
+      if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
       var predicted=gp.pred.aProb>=50?gp.away:gp.home;
       var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
       if(predicted===actual)correct++;else wrong++;
@@ -584,7 +591,7 @@ function renderLB(m){
       var dog=gp.pred.aProb>=50?gp.home:gp.away;
       var live=getLiveData(gp.gamePk);
       var resultHTML='';
-      if(live&&live.status==='Final'){
+      if(live&&live.status==='Final'&&!(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)){
         var actual=live.awayScore>live.homeScore?gp.away:gp.home;
         var ok=fav===actual;
         resultHTML=' <span class="pred-result '+(ok?'pred-correct':'pred-wrong')+'" style="font-size:9px">'+(ok?'&#10003;':'&#10007;')+'</span>';
