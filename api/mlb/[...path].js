@@ -1,7 +1,4 @@
-// Catch-all MLB Stats API proxy
-// /api/mlb/api/v1/schedule?sportId=1 -> https://statsapi.mlb.com/api/v1/schedule?sportId=1
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
@@ -13,14 +10,13 @@ export default async function handler(req, res) {
 
   const mlbPath = '/' + (Array.isArray(path) ? path.join('/') : path);
 
-  // Rebuild query string (exclude the catch-all 'path' param)
   const queryParams = { ...req.query };
   delete queryParams.path;
   const qs = Object.keys(queryParams).length > 0
     ? '?' + new URLSearchParams(queryParams).toString()
     : '';
 
-  const url = `https://statsapi.mlb.com${mlbPath}${qs}`;
+  const url = 'https://statsapi.mlb.com' + mlbPath + qs;
 
   try {
     const response = await fetch(url, {
@@ -32,7 +28,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: `MLB API returned ${response.status}`,
+        error: 'MLB API returned ' + response.status,
         url: mlbPath + qs,
       });
     }
@@ -42,4 +38,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};
