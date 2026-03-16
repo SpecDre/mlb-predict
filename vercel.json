@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/mlb/(.*)",
+      "destination": "/api/proxy?mlbpath=/$1"
+    }
+  ]
+}
