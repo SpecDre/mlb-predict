@@ -6,170 +6,94 @@
 <title>MLB Predict</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#F5F3EE;--sf:#FFFFFF;--sf2:#EDE9E0;--tx:#1A1A18;--tx2:#6B6960;--tx3:#9B9788;
-  --acc:#BA7517;--accL:#FAEEDA;--accD:#854F0B;
-  --grn:#4A8C1C;--grnB:#EAF3DE;--red:#C43028;--redB:#FCEBEB;
-  --blu:#2A6CB6;--bluB:#E6F1FB;--pur:#6B5BC0;--purB:#EEEDFE;
-  --teal:#0F6E56;--tealB:#E1F5EE;--coral:#D85A30;--coralB:#FAECE7;
-  --brd:rgba(0,0,0,0.08);--r:10px;--rl:14px;
-}
-@media(prefers-color-scheme:dark){:root{
-  --bg:#1A1918;--sf:#252422;--sf2:#302E2A;--tx:#E8E5DD;--tx2:#A09C92;--tx3:#6B6960;
-  --acc:#EF9F27;--accL:#412402;--accD:#FAC775;
-  --grn:#97C459;--grnB:#1E2E0D;--red:#F09595;--redB:#3A1616;
-  --blu:#85B7EB;--bluB:#122540;--pur:#AFA9EC;--purB:#26215C;
-  --teal:#5DCAA5;--tealB:#04342C;--coral:#F0997B;--coralB:#4A1B0C;
-  --brd:rgba(255,255,255,0.08);
-}}
+:root{--bg:#F5F3EE;--sf:#FFF;--sf2:#EDE9E0;--tx:#1A1A18;--tx2:#6B6960;--tx3:#9B9788;--acc:#BA7517;--accL:#FAEEDA;--grn:#4A8C1C;--grnB:#EAF3DE;--red:#C43028;--redB:#FCEBEB;--blu:#2A6CB6;--bluB:#E6F1FB;--pur:#6B5BC0;--purB:#EEEDFE;--teal:#0F6E56;--tealB:#E1F5EE;--brd:rgba(0,0,0,.08);--r:10px;--rl:14px}
+@media(prefers-color-scheme:dark){:root{--bg:#1A1918;--sf:#252422;--sf2:#302E2A;--tx:#E8E5DD;--tx2:#A09C92;--tx3:#6B6960;--acc:#EF9F27;--accL:#412402;--grn:#97C459;--grnB:#1E2E0D;--red:#F09595;--redB:#3A1616;--blu:#85B7EB;--bluB:#122540;--pur:#AFA9EC;--purB:#26215C;--teal:#5DCAA5;--tealB:#04342C;--brd:rgba(255,255,255,.08)}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 .app{max-width:880px;margin:0 auto;padding:20px 16px 100px}
-.hdr{margin-bottom:20px}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-spacing:-.5px}
+.hdr{margin-bottom:20px}.hdr-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-m{width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center}
 .logo-m svg{width:22px;height:22px}
-h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-spacing:-.5px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .sub-h{font-size:14px;color:var(--tx2);line-height:1.5}
 
-/* Date nav */
-.date-nav{display:flex;align-items:center;gap:8px;margin:16px 0;justify-content:center}
-.date-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--brd);background:var(--sf);color:var(--tx);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:16px}
-.date-btn:hover{background:var(--sf2);border-color:var(--tx3)}
-.date-btn:active{transform:scale(.95)}
-.date-display{text-align:center;min-width:200px}
-.date-main{font-family:'Playfair Display',serif;font-size:20px;font-weight:900}
-.date-sub{font-size:11px;color:var(--tx3);margin-top:2px}
-.date-today{font-size:10px;font-weight:600;color:var(--acc);background:var(--accL);padding:3px 10px;border-radius:12px;cursor:pointer;margin-left:8px}
-.date-today:hover{opacity:.8}
+.date-nav{display:flex;align-items:center;gap:8px;margin:14px 0;justify-content:center}
+.date-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--brd);background:var(--sf);color:var(--tx);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.date-main{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;text-align:center;min-width:200px}
+.date-sub{font-size:11px;color:var(--tx3);text-align:center;margin-top:2px}
 
-/* Banner */
-.banner{padding:10px 14px;border-radius:var(--r);font-size:12px;line-height:1.6;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
-.banner svg{flex-shrink:0;margin-top:2px}
-.b-hist{background:var(--coralB);color:var(--coral)}
-.b-live{background:var(--tealB);color:var(--teal)}
-.b-info{background:var(--bluB);color:var(--blu)}
-
-/* Modes */
-.modes{display:flex;gap:4px;background:var(--sf2);border-radius:var(--r);padding:4px;margin-bottom:8px}
-.mbtn{flex:1;padding:10px 6px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;background:transparent;color:var(--tx2);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.modes{display:flex;gap:4px;background:var(--sf2);border-radius:var(--r);padding:4px;margin-bottom:16px}
+.mbtn{flex:1;padding:10px 6px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;background:transparent;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
 .mbtn.act{background:var(--sf);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.mbtn:hover:not(.act){color:var(--tx)}
 .mbdg{font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px}
 .bdg-g{background:var(--tealB);color:var(--teal)}.bdg-hr{background:var(--redB);color:var(--red)}.bdg-h{background:var(--bluB);color:var(--blu)}
 
-.stabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.stab{padding:7px 14px;border:1px solid var(--brd);border-radius:20px;font-size:12px;font-weight:500;background:var(--sf);color:var(--tx2);cursor:pointer;transition:all .15s}
-.stab.act{background:var(--tx);color:var(--bg);border-color:var(--tx)}
-.stab:hover:not(.act){border-color:var(--tx3)}
-
-/* Progress */
-.prog-wrap{margin-bottom:16px}
-.prog-lbl{font-size:12px;color:var(--tx2);margin-bottom:6px;display:flex;justify-content:space-between}
-.prog-bar{height:6px;background:var(--sf2);border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;background:var(--acc);border-radius:3px;transition:width .3s}
-
-/* Loading / Error / Empty */
 .ld{text-align:center;padding:60px 20px;color:var(--tx2)}
 .sp{width:36px;height:36px;border:3px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.err{background:var(--redB);border-radius:var(--rl);padding:24px;text-align:center}
-.err strong{color:var(--red)}.err p{font-size:13px;color:var(--red);opacity:.8;margin-top:6px}
-.empty{text-align:center;padding:50px 20px}
-.empty h3{font-size:16px;margin-bottom:6px}.empty p{font-size:13px;color:var(--tx2);line-height:1.6}
-.scan-msg{font-size:13px;color:var(--tx2);text-align:center;padding:10px;margin-bottom:10px;font-style:italic}
 
-/* ====== GAME PREDICTION CARD ====== */
-.gp-card{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);margin-bottom:16px;overflow:hidden}
-.gp-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--sf2);border-bottom:1px solid var(--brd);flex-wrap:wrap;gap:6px}
-.gp-status{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:3px 8px;border-radius:6px}
-.st-pre{background:var(--bluB);color:var(--blu)}.st-live{background:var(--redB);color:var(--red)}.st-fin{background:var(--sf2);color:var(--tx3)}
-.gp-match{display:flex;align-items:stretch}
-.gp-tm{flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;gap:4px}
-.gp-tm.win{background:var(--grnB)}
-.gp-abbr{font-size:26px;font-weight:900;font-family:'Playfair Display',serif;letter-spacing:-1px}
-.gp-rec{font-size:11px;color:var(--tx3)}
-.gp-wp{font-size:30px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
-.gp-wp.fav{color:var(--grn)}.gp-wp.dog{color:var(--tx3)}
-.gp-wl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
-.gp-vs{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0;font-size:12px;color:var(--tx3);font-weight:600}
-.gp-barw{padding:0 18px 12px}
-.gp-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--sf2)}
-.gp-bar>div{height:100%;transition:width .6s}
-.gp-pit{display:flex;justify-content:space-between;align-items:center;padding:8px 18px;border-top:1px solid var(--brd);font-size:12px;color:var(--tx2)}
-.gp-plb{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
-.gp-ven{font-size:10px;color:var(--tx3)}
-.gp-fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;padding:10px 18px}
-.gp-fi{background:var(--sf2);border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
-.gp-fl{font-size:11px;color:var(--tx2)}.gp-fv{font-size:12px;font-weight:700}
-.gp-fv.ea{color:var(--blu)}.gp-fv.eh{color:var(--teal)}.gp-fv.ee{color:var(--tx3)}
-.gp-verdict{margin:4px 18px 14px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6;border-left:3px solid var(--acc);background:var(--sf2);color:var(--tx2)}
-.yr-grid{display:flex;gap:5px;flex-wrap:wrap;padding:4px 18px 10px}
-.yr-chip{font-size:10px;padding:4px 10px;border-radius:6px;background:var(--sf2);color:var(--tx2);font-weight:500}
-.yr-chip b{font-weight:700;color:var(--tx)}
+/* Game card */
+.gc{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);margin-bottom:14px;overflow:hidden}
+.gc-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--sf2);border-bottom:1px solid var(--brd);flex-wrap:wrap;gap:6px}
+.tm{font-size:15px;font-weight:700}.vs_{font-size:11px;color:var(--tx3)}
+.gc-live{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.gc-live .score{font-family:'Playfair Display',serif;font-size:18px;font-weight:900}
+.gc-live .inning{font-size:10px;color:var(--tx3);text-transform:uppercase}
 
-/* ====== BATTER CARDS ====== */
-.gc{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);margin-bottom:16px;overflow:hidden}
-.gc-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--brd);background:var(--sf2);flex-wrap:wrap;gap:6px}
-.gc-tms{display:flex;align-items:center;gap:8px}
-.tm{font-size:15px;font-weight:700}.vs_{font-size:11px;color:var(--tx3);font-weight:500}
-.pk-tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px}
-.pk-h{background:var(--grnB);color:var(--grn)}.pk-c{background:var(--bluB);color:var(--blu)}.pk-n{background:var(--sf2);color:var(--tx3)}
-.gc-pit{display:flex;justify-content:space-between;align-items:center;padding:8px 18px;border-bottom:1px solid var(--brd);font-size:12px;color:var(--tx2)}
-.slb{padding:8px 18px 4px;font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.7px;border-top:1px solid var(--brd)}
+/* Win prob display */
+.wp-row{display:flex;align-items:stretch}
+.wp-tm{flex:1;padding:14px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.wp-tm.fav{background:var(--grnB)}
+.wp-abbr{font-size:24px;font-weight:900;font-family:'Playfair Display',serif}
+.wp-rec{font-size:11px;color:var(--tx3)}
+.wp-pct{font-size:28px;font-weight:900;font-family:'Playfair Display',serif}
+.wp-pct.hi{color:var(--grn)}.wp-pct.lo{color:var(--tx3)}
+.wp-lbl{font-size:9px;color:var(--tx3);text-transform:uppercase}
+.wp-vs{display:flex;align-items:center;justify-content:center;width:40px;font-size:11px;color:var(--tx3);font-weight:600}
+.wp-bar{padding:0 16px 10px;display:flex;gap:2px}
+.wp-bar>div{height:8px;border-radius:4px}
 
-.br{display:flex;align-items:center;padding:10px 18px;gap:10px;cursor:pointer;transition:background .12s}
+.gc-pit{display:flex;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--brd);font-size:12px;color:var(--tx2)}
+.gc-verdict{margin:4px 16px 12px;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;border-left:3px solid var(--acc);background:var(--sf2);color:var(--tx2)}
+
+/* Batter row */
+.slb{padding:6px 16px 3px;font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--brd)}
+.br{display:flex;align-items:center;padding:8px 16px;gap:8px;cursor:pointer}
 .br:hover{background:var(--sf2)}
-.brk{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.brk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
 .rk-f{background:var(--redB);color:var(--red)}.rk-h{background:var(--accL);color:var(--acc)}.rk-o{background:var(--grnB);color:var(--grn)}.rk-c{background:var(--sf2);color:var(--tx3)}
 .bi{flex:1;min-width:0}.bn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bm{font-size:11px;color:var(--tx3);margin-top:1px}
-.bpills{display:flex;gap:5px;flex-shrink:0}
-.pl{font-size:10px;padding:3px 7px;border-radius:6px;font-weight:600;white-space:nowrap}
-.pl-hr{background:var(--accL);color:var(--acc)}.pl-av{background:var(--sf2);color:var(--tx2)}.pl-iso{background:var(--purB);color:var(--pur)}
-.bp{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;min-width:52px}
-.bpc{font-size:18px;font-weight:700;line-height:1}
+.bm{font-size:11px;color:var(--tx3)}
+.bp{text-align:right;flex-shrink:0}.bpc{font-size:17px;font-weight:700}
 .bpc.tf{color:var(--red)}.bpc.th{color:var(--acc)}.bpc.to{color:var(--grn)}.bpc.tc{color:var(--tx3)}
-.bpl{font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
-.bbar{width:52px;height:4px;background:var(--sf2);border-radius:2px;overflow:hidden;margin-top:3px}
-.bfill{height:100%;border-radius:2px;transition:width .5s}
+.bpl{font-size:8px;color:var(--tx3);text-transform:uppercase}
 
-.bd{display:none;padding:2px 18px 12px 54px}.bd.open{display:block}
-.dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(85px,1fr));gap:5px}
-.di{background:var(--sf2);border-radius:6px;padding:5px 8px}
-.dl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.3px}
-.dv{font-size:13px;font-weight:600}
-.fs{margin-top:8px;padding:8px 10px;background:var(--sf2);border-radius:8px;font-size:11px;line-height:1.7;color:var(--tx2)}
-.fp{color:var(--grn);font-weight:600}.fn{color:var(--red);font-weight:600}.fe{color:var(--tx3)}
-.h2h-b{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:11px;line-height:1.6;border-left:3px solid var(--pur);background:var(--purB);color:var(--pur)}
-.h2h-b strong{font-weight:700}
+.bd{display:none;padding:2px 16px 10px 48px}.bd.open{display:block}
+.dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px}
+.di{background:var(--sf2);border-radius:6px;padding:4px 8px}
+.dl{font-size:9px;color:var(--tx3);text-transform:uppercase}.dv{font-size:13px;font-weight:600}
+.h2h-b{margin-top:6px;padding:6px 8px;border-radius:6px;font-size:11px;border-left:3px solid var(--pur);background:var(--purB);color:var(--pur)}
 
 /* Leaderboard */
 .lbc{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);overflow:hidden}
-.lbr{display:flex;align-items:center;padding:11px 18px;gap:12px;border-bottom:1px solid var(--brd)}
-.lbr:last-child{border-bottom:none}.lbr:hover{background:var(--sf2)}
-.lbn{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--tx3);width:28px;text-align:center;flex-shrink:0}
+.lbr{display:flex;align-items:center;padding:10px 16px;gap:10px;border-bottom:1px solid var(--brd)}
+.lbr:last-child{border-bottom:none}
+.lbn{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--tx3);width:26px;text-align:center}
 .lbn.t3{color:var(--acc)}
 .lbi{flex:1;min-width:0}.lbna{font-size:14px;font-weight:600}
-.lbsu{font-size:11px;color:var(--tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lbp{text-align:right;flex-shrink:0}.lbpv{font-size:20px;font-weight:700}
-.lbpl{font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px}
+.lbsu{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbpv{font-size:18px;font-weight:700;text-align:right}
 
-/* Method */
-.meth{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);padding:22px;margin-bottom:16px}
-.meth h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.meth p{font-size:13px;color:var(--tx2);line-height:1.7;margin-bottom:10px}
-.fml{background:var(--sf2);border-radius:8px;padding:14px;font-size:12px;line-height:2;margin:12px 0}
-.mnote{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6}
-.n-g{background:var(--tealB);color:var(--teal)}.n-hr{background:var(--accL);color:var(--acc)}.n-h{background:var(--bluB);color:var(--blu)}.n-h2h{background:var(--purB);color:var(--pur)}
+.stabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.stab{padding:6px 14px;border:1px solid var(--brd);border-radius:20px;font-size:12px;font-weight:500;background:var(--sf);color:var(--tx2);cursor:pointer}
+.stab.act{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 
-@media(max-width:600px){
-  .bpills{display:none}h1{font-size:22px}.dg{grid-template-columns:repeat(3,1fr)}
-  .gp-match{flex-direction:column}.gp-vs{width:100%;padding:4px 0}
-  .gp-fgrid{grid-template-columns:1fr 1fr}.mbtn{font-size:11px;padding:10px 4px}
-  .date-main{font-size:17px}
-}
+.empty{text-align:center;padding:50px 20px}.empty h3{font-size:16px;margin-bottom:6px}.empty p{font-size:13px;color:var(--tx2)}
+.refresh-bar{text-align:center;font-size:11px;color:var(--tx3);padding:6px 0}
+@media(max-width:600px){.wp-row{flex-direction:column}.wp-vs{width:100%;padding:2px 0}h1{font-size:22px}}
 </style>
 </head>
 <body>
@@ -180,448 +104,174 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
         <div class="logo-m"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3.5 12C6 12 8 9 8 6.5M3.5 12C6 12 8 15 8 17.5M20.5 12C18 12 16 9 16 6.5M20.5 12C18 12 16 15 16 17.5"/></svg></div>
         <h1>MLB Predict</h1>
       </div>
+      <div id="liveInd" style="display:none"><span class="live-dot"></span> <span style="font-size:12px;color:var(--red);font-weight:600">LIVE</span></div>
     </div>
-    <p class="sub-h">Game picks, HR &amp; hit probabilities — 3-year data + head-to-head matchups</p>
+    <p class="sub-h">Game picks, HR &amp; hit probabilities — instant server-side predictions</p>
   </div>
 
-  <!-- Date Navigation -->
   <div class="date-nav">
-    <button class="date-btn" onclick="changeDate(-1)" title="Previous day">&#8249;</button>
-    <div class="date-display">
-      <div class="date-main" id="dateMain">Loading...</div>
-      <div class="date-sub" id="dateSub"></div>
-    </div>
-    <button class="date-btn" onclick="changeDate(1)" title="Next day">&#8250;</button>
-    <span class="date-today" id="todayBtn" onclick="goToday()" style="display:none">Today</span>
+    <button class="date-btn" onclick="changeDate(-1)">&#8249;</button>
+    <div><div class="date-main" id="dateMain">Loading...</div><div class="date-sub" id="dateSub"></div></div>
+    <button class="date-btn" onclick="changeDate(1)">&#8250;</button>
   </div>
-
-  <div id="bannerArea"></div>
 
   <div class="modes">
-    <button class="mbtn act" data-m="game" onclick="setMode('game')">&#9917; Games <span class="mbdg bdg-g" id="bg">—</span></button>
-    <button class="mbtn" data-m="hr" onclick="setMode('hr')">&#128165; HR <span class="mbdg bdg-hr" id="bhr">—</span></button>
-    <button class="mbtn" data-m="hit" onclick="setMode('hit')">&#127951; Hits <span class="mbdg bdg-h" id="bht">—</span></button>
+    <button class="mbtn act" data-m="game" onclick="setMode('game')">&#9917; Games <span class="mbdg bdg-g" id="bg">-</span></button>
+    <button class="mbtn" data-m="hr" onclick="setMode('hr')">&#128165; HR <span class="mbdg bdg-hr" id="bhr">-</span></button>
+    <button class="mbtn" data-m="hit" onclick="setMode('hit')">&#127951; Hits <span class="mbdg bdg-h" id="bht">-</span></button>
   </div>
 
   <div class="stabs">
     <button class="stab act" data-s="main" onclick="setSub('main')">By game</button>
     <button class="stab" data-s="lb" onclick="setSub('lb')">Leaderboard</button>
-    <button class="stab" data-s="how" onclick="setSub('how')">How it works</button>
   </div>
 
-  <div id="prog" class="prog-wrap" style="display:none">
-    <div class="prog-lbl"><span id="progLbl">Loading...</span><span id="progPct">0%</span></div>
-    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-  </div>
-
+  <div id="refreshBar" class="refresh-bar" style="display:none">Live scores updating every 10s</div>
   <div id="out"></div>
 </div>
 <script>
-const API='/api/mlb/api/v1';
-const CUR_YR=new Date().getFullYear();
-const HIST_YRS=[CUR_YR-1,CUR_YR-2,CUR_YR-3];
-const ALL_YRS=[CUR_YR,...HIST_YRS];
-const YR_W={[CUR_YR]:1.0,[CUR_YR-1]:.55,[CUR_YR-2]:.30,[CUR_YR-3]:.15};
+var mode='game',sub_='main',currentDate=new Date(),data=null,liveScores={},refreshTimer=null;
 
-const PF_HR={'Coors Field':1.38,'Great American Ball Park':1.18,'Yankee Stadium':1.15,'Guaranteed Rate Field':1.10,'Globe Life Field':1.08,'Wrigley Field':1.07,'Citizens Bank Park':1.07,'Fenway Park':1.05,'Minute Maid Park':1.04,'Target Field':1.03,'Nationals Park':1.02,'Chase Field':1.02,'Truist Park':1.01,'Busch Stadium':1.00,'American Family Field':1.00,'Rogers Centre':.99,'Angel Stadium':.98,'Comerica Park':.97,'PNC Park':.97,'Progressive Field':.96,'Kauffman Stadium':.95,'Tropicana Field':.95,'loanDepot park':.94,'T-Mobile Park':.93,'Dodger Stadium':.93,'Citi Field':.92,'Oracle Park':.88,'Petco Park':.90,'Oakland Coliseum':.87,'Oriole Park at Camden Yards':1.06};
-const PF_HIT={'Coors Field':1.12,'Fenway Park':1.06,'Globe Life Field':1.04,'Guaranteed Rate Field':1.03,'Wrigley Field':1.03,'Yankee Stadium':1.02,'Chase Field':1.02,'Citizens Bank Park':1.02,'Great American Ball Park':1.02,'Minute Maid Park':1.01,'Target Field':1.01,'Truist Park':1.01,'Rogers Centre':1.01,'Nationals Park':1.00,'Busch Stadium':1.00,'American Family Field':1.00,'PNC Park':1.00,'Angel Stadium':.99,'Oriole Park at Camden Yards':.99,'Comerica Park':.99,'Progressive Field':.99,'Kauffman Stadium':.98,'Tropicana Field':.98,'loanDepot park':.98,'Dodger Stadium':.97,'Citi Field':.97,'T-Mobile Park':.97,'Oracle Park':.96,'Petco Park':.96,'Oakland Coliseum':.95};
-const PF_RUN={'Coors Field':1.25,'Great American Ball Park':1.12,'Yankee Stadium':1.08,'Globe Life Field':1.06,'Guaranteed Rate Field':1.06,'Fenway Park':1.05,'Wrigley Field':1.05,'Citizens Bank Park':1.05,'Chase Field':1.04,'Minute Maid Park':1.03,'Target Field':1.02,'Truist Park':1.01,'Nationals Park':1.01,'Rogers Centre':1.01,'American Family Field':1.00,'Busch Stadium':1.00,'Oriole Park at Camden Yards':1.00,'PNC Park':.99,'Angel Stadium':.98,'Progressive Field':.98,'Comerica Park':.97,'Kauffman Stadium':.97,'Tropicana Field':.96,'loanDepot park':.96,'Dodger Stadium':.96,'Citi Field':.95,'T-Mobile Park':.94,'Oracle Park':.93,'Petco Park':.94,'Oakland Coliseum':.93};
-const LG={hrPA:.033,hr9:1.25,iso:.150,avg:.248,whip:1.28,h9:8.4,babip:.295,era:4.20,rpg:4.6};
-
-// ====== STATE ======
-let currentDate=new Date();
-let mode='game',sub_='main';
-let games=[],gameBatters={},allBatters=[],gamePreds=[];
-let loaded=false,loading=false;
-let totalSteps=1,doneSteps=0;
-
-// ====== UTILS ======
-const dateStr=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const fTime=i=>{if(!i)return'';return new Date(i).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})};
-const gpf=(v,t)=>{const m=t==='hr'?PF_HR:t==='hit'?PF_HIT:PF_RUN;if(!v)return 1;for(const[k,f]of Object.entries(m))if(v.includes(k)||k.includes(v))return f;return 1};
-const fJ=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json()};
-const isSameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+var dateStr=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+var fTime=function(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})};
 
 function updateDateUI(){
-  const opts={weekday:'long',month:'long',day:'numeric',year:'numeric'};
-  document.getElementById('dateMain').textContent=currentDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  const today=new Date();
-  const isToday=isSameDay(currentDate,today);
-  const diff=Math.round((currentDate-today)/(1000*60*60*24));
-  let subText='';
-  if(isToday)subText='Today';
-  else if(diff===1)subText='Tomorrow';
-  else if(diff===-1)subText='Yesterday';
-  else if(diff>1)subText=`${diff} days from now`;
-  else subText=`${Math.abs(diff)} days ago`;
-  document.getElementById('dateSub').textContent=subText;
-  document.getElementById('todayBtn').style.display=isToday?'none':'';
+  var d=currentDate;
+  document.getElementById('dateMain').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  var today=new Date();var diff=Math.round((d-today)/(864e5));
+  document.getElementById('dateSub').textContent=diff===0?'Today':diff===1?'Tomorrow':diff===-1?'Yesterday':diff>0?diff+' days ahead':Math.abs(diff)+' days ago';
 }
 
-function updateProg(label){
-  doneSteps++;
-  const pct=Math.min(Math.round(doneSteps/Math.max(totalSteps,1)*100),100);
-  document.getElementById('progLbl').textContent=label;
-  document.getElementById('progPct').textContent=pct+'%';
-  document.getElementById('progFill').style.width=pct+'%';
-}
+function changeDate(delta){currentDate=new Date(currentDate.getTime()+delta*864e5);updateDateUI();loadData()}
+function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(function(b){b.classList.toggle('act',b.dataset.m===m)});render()}
+function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(function(b){b.classList.toggle('act',b.dataset.s===s)});render()}
 
-// ====== CACHE ======
-function cacheKey(dt){return'mlbp_'+dateStr(dt)}
-function getCache(dt){
-  try{const raw=localStorage.getItem(cacheKey(dt));if(!raw)return null;const c=JSON.parse(raw);if(Date.now()-c.ts>6*3600000)return null;return c}catch(e){return null}
-}
-function setCache(dt,data){
-  try{localStorage.setItem(cacheKey(dt),JSON.stringify({...data,ts:Date.now()}))}catch(e){}
-}
-
-// ====== MULTI-SEASON FETCHERS ======
-async function getMultiHitting(pid){
-  const s={};
-  for(const yr of ALL_YRS){try{const d=await fJ(`${API}/people/${pid}/stats?stats=season&season=${yr}&group=hitting`);const st=d.stats?.[0]?.splits?.[0]?.stat;if(st&&(st.atBats||0)>0)s[yr]=st}catch(e){}}
-  return s;
-}
-async function getMultiPitching(pid){
-  const s={};
-  for(const yr of ALL_YRS){try{const d=await fJ(`${API}/people/${pid}/stats?stats=season&season=${yr}&group=pitching`);const st=d.stats?.[0]?.splits?.[0]?.stat;if(st&&parseFloat(st.inningsPitched||0)>0)s[yr]=st}catch(e){}}
-  return s;
-}
-async function getH2H(bid,pid){
-  const t={ab:0,h:0,hr:0,bb:0,so:0,pa:0};
-  for(const yr of ALL_YRS){try{const d=await fJ(`${API}/people/${bid}/stats?stats=vsPlayer&opposingPlayerId=${pid}&season=${yr}&group=hitting`);const s=d.stats?.[0]?.splits?.[0]?.stat;if(s){t.ab+=(s.atBats||0);t.h+=(s.hits||0);t.hr+=(s.homeRuns||0);t.bb+=(s.baseOnBalls||0);t.so+=(s.strikeOuts||0);t.pa+=(s.atBats||0)+(s.baseOnBalls||0)+(s.hitByPitch||0)+(s.sacFlies||0)}}catch(e){}}
-  if(t.pa<3)return null;
-  t.avg=t.ab>0?t.h/t.ab:0;t.hrRate=t.pa>0?t.hr/t.pa:0;
-  return t;
-}
-
-// ====== WEIGHTED STATS ======
-function weightBat(seasons){
-  let wHR=0,wH=0,wSLG=0,wOBP=0,wSO=0,wTot=0;
-  const yrs=[];
-  for(const[yr,s]of Object.entries(seasons)){
-    const w=YR_W[yr]||.1;const ab=s.atBats||0,pa=ab+(s.baseOnBalls||0)+(s.hitByPitch||0)+(s.sacFlies||0);
-    if(pa<10)continue;
-    const sw=Math.min(pa/400,1);const fw=w*sw;
-    wHR+=((s.homeRuns||0)/Math.max(pa,1))*fw;
-    wH+=(ab>0?(s.hits||0)/ab:0)*fw;
-    wSLG+=(parseFloat(s.slg)||0)*fw;
-    wOBP+=(parseFloat(s.obp)||0)*fw;
-    wSO+=(pa>0?(s.strikeOuts||0)/pa:0)*fw;
-    wTot+=fw;
-    yrs.push({yr,ab,hr:s.homeRuns||0,avg:s.avg||'—',ops:s.ops||'—'});
-  }
-  if(wTot===0)return null;
-  const avg=wH/wTot,slg=wSLG/wTot,obp=wOBP/wTot,iso=slg-avg;
-  let tHR=0,tAB=0,tH=0;
-  for(const s of Object.values(seasons)){tHR+=(s.homeRuns||0);tAB+=(s.atBats||0);tH+=(s.hits||0)}
-  return{hrPA:wHR/wTot,avg,slg,obp,iso,kRate:wSO/wTot,babip:Math.max(.25,Math.min(.36,avg+.05)),totHR:tHR,totAB:tAB,totH:tH,yrs};
-}
-function weightPit(seasons){
-  let wE=0,wW=0,wHR=0,wH=0,wTot=0;const yrs=[];
-  for(const[yr,s]of Object.entries(seasons)){
-    const w=YR_W[yr]||.1;const ip=parseFloat(s.inningsPitched)||0;if(ip<10)continue;
-    const sw=Math.min(ip/150,1);const fw=w*sw;
-    wE+=(parseFloat(s.era)||LG.era)*fw;wW+=(parseFloat(s.whip)||LG.whip)*fw;
-    wHR+=(parseFloat(s.homeRunsPer9)||LG.hr9)*fw;wH+=(parseFloat(s.hitsPer9)||LG.h9)*fw;
-    wTot+=fw;
-    yrs.push({yr,ip:s.inningsPitched||'0',era:s.era||'—',whip:s.whip||'—'});
-  }
-  if(wTot===0)return null;
-  return{era:wE/wTot,whip:wW/wTot,hr9:wHR/wTot,h9:wH/wTot,ip:999,yrs};
-}
-
-// ====== MODELS ======
-function calcHR(b,opp,pf,h2h){
-  let base=b.hrPA;const isoF=b.iso>0?(b.iso/LG.iso)*.3+.7:1;
-  let pitF=1;if(opp){if(opp.hr9>0)pitF=opp.hr9/LG.hr9;else pitF=Math.max(.6,Math.min(1.5,opp.era/LG.era))}
-  let h2hF=1;if(h2h&&h2h.pa>=5){const r=h2h.hrRate;if(r>0)h2hF=1+(r/LG.hrPA-1)*.4;h2hF=Math.max(.7,Math.min(1.8,h2hF))}
-  let pp=base*isoF*pitF*(pf||1)*h2hF;pp=Math.max(.005,Math.min(.14,pp));
-  const gm=1-Math.pow(1-pp,3.8);
-  return{pct:(gm*100).toFixed(1),f:{base:(base*100).toFixed(2),iso:isoF.toFixed(2),pitcher:pitF.toFixed(2),park:(pf||1).toFixed(2),h2h:h2hF.toFixed(2),perPA:(pp*100).toFixed(2),game:(gm*100).toFixed(1)}};
-}
-function calcHit(b,opp,pf,h2h){
-  let base=b.avg;let cF=b.babip>0?(b.babip/LG.babip)*.25+.75:1;
-  let pitF=1;if(opp){if(opp.h9>0)pitF=opp.h9/LG.h9;else if(opp.whip>0)pitF=opp.whip/LG.whip;else pitF=Math.max(.7,Math.min(1.4,opp.era/LG.era))}
-  let dF=1;if(b.obp>0){dF=1+(b.obp-.320)*.5;dF*=1+(.22-b.kRate)*.3;dF=Math.max(.80,Math.min(1.25,dF))}
-  let h2hF=1;if(h2h&&h2h.pa>=5&&h2h.ab>=3){if(h2h.avg>0)h2hF=1+(h2h.avg/LG.avg-1)*.35;h2hF=Math.max(.75,Math.min(1.5,h2hF))}
-  let pp=base*cF*pitF*(pf||1)*dF*h2hF;pp=Math.max(.10,Math.min(.45,pp));
-  const gm=1-Math.pow(1-pp,3.8);
-  return{pct:(gm*100).toFixed(1),f:{base:(base*1000).toFixed(0),contact:cF.toFixed(2),pitcher:pitF.toFixed(2),park:(pf||1).toFixed(2),disc:dF.toFixed(2),h2h:h2hF.toFixed(2),perPA:(pp*100).toFixed(1),game:(gm*100).toFixed(1)}};
-}
-function calcWin(a,h,aP,hP,venue){
-  const rpf=gpf(venue,'run');
-  const aW=a.gp>=30?a.wp:a.wp*(a.gp/40)+.5*(1-a.gp/40);
-  const hW=h.gp>=30?h.wp:h.wp*(h.gp/40)+.5*(1-h.gp/40);
-  const wpE=aW-hW;
-  const aE=aP?.era||LG.era,hE=hP?.era||LG.era;
-  const aSF=LG.era/Math.max(aE,1.5),hSF=LG.era/Math.max(hE,1.5);
-  const spE=aSF-hSF;const batE=(a.ops-h.ops)*2;
-  const aL=a.l10w!==undefined?a.l10w/10:.5,hL=h.l10w!==undefined?h.l10w/10:.5;
-  const fE=(aL-hL)*.5;const rdE=(a.rdPG-h.rdPG)*.04;
-  const tot=wpE*.8+spE*.25+batE*.15+fE+rdE-.04+(rpf-1)*(h.ops>a.ops?-.02:.02);
-  const awP=1/(1+Math.exp(-tot*4)),hoP=1-awP;
-  const bR=LG.rpg*rpf;
-  const lbl=(n,v)=>({name:n,cls:v>.01?'ea':v<-.01?'eh':'ee',who:v>.01?a.abbr:v<-.01?h.abbr:'Even'});
-  return{aProb:Math.round(awP*100),hProb:Math.round(hoP*100),aRuns:Math.max(1,Math.round(bR*(a.ops/.72)*hSF*10)/10),hRuns:Math.max(1,Math.round(bR*(h.ops/.72)*aSF*10)/10),edges:[lbl('Win %',wpE),lbl('Starter',spE),lbl('Batting',batE),lbl('Last 10',fE),lbl('Run diff',rdE),{name:'Home field',cls:'eh',who:h.abbr},lbl('Park',(rpf-1)*(h.ops>a.ops?-.02:.02))],det:{aERA:aE.toFixed(2),hERA:hE.toFixed(2)}};
-}
-
-// ====== TIERS ======
+// Tier helpers
 function hrT(p){p=+p;return p>=12?'f':p>=7?'h':p>=4?'o':'c'}
 function hitT(p){p=+p;return p>=85?'f':p>=75?'h':p>=60?'o':'c'}
 function tCls(t){return'rk-'+t}
 function tCol(t){return t==='f'?'var(--red)':t==='h'?'var(--acc)':t==='o'?'var(--grn)':'var(--tx3)'}
 
-// ====== RENDER GAME PREDICTION ======
-function rGP(gp){
-  const g=gp.game,p=gp.pred,aw=g.teams.away.team,ho=g.teams.home.team;
-  const stT=fTime(g.gameDate);const aW=p.aProb>=50;
-  const conf=Math.max(p.aProb,p.hProb);
-  const cL=conf>=65?'Strong pick':conf>=55?'Moderate edge':'Coin flip';
-  const fav=aW?aw.abbreviation:ho.abbreviation;
-  let v=conf>=65?`Model strongly favors ${fav}. Predicted: ${aw.abbreviation} ${p.aRuns.toFixed(1)} – ${ho.abbreviation} ${p.hRuns.toFixed(1)}.`
-    :conf>=55?`Slight lean ${fav}. Predicted: ${aw.abbreviation} ${p.aRuns.toFixed(1)} – ${ho.abbreviation} ${p.hRuns.toFixed(1)}.`
-    :`Toss-up. Predicted: ${aw.abbreviation} ${p.aRuns.toFixed(1)} – ${ho.abbreviation} ${p.hRuns.toFixed(1)}.`;
-  const awSP=g.teams.away.probablePitcher?.fullName||'TBD',hoSP=g.teams.home.probablePitcher?.fullName||'TBD';
-  const venue=g.venue?.name||'';
-  const yC=y=>`<span class="yr-chip"><b>${y.yr}</b> ${y.ip}ip ${y.era}ERA</span>`;
-  return`<div class="gp-card">
-    <div class="gp-head"><div style="display:flex;align-items:center;gap:10px"><span class="tm">${aw.abbreviation}</span><span class="vs_">@</span><span class="tm">${ho.abbreviation}</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;font-weight:600;color:var(--acc)">${cL}</span><span class="gp-status st-pre">${stT}</span></div></div>
-    <div class="gp-match">
-      <div class="gp-tm ${aW?'win':''}"><div class="gp-abbr">${aw.abbreviation}</div><div class="gp-rec">${gp.aRec||''}</div><div class="gp-wp ${aW?'fav':'dog'}">${p.aProb}%</div><div class="gp-wl">Win prob</div></div>
-      <div class="gp-vs">VS</div>
-      <div class="gp-tm ${!aW?'win':''}"><div class="gp-abbr">${ho.abbreviation}</div><div class="gp-rec">${gp.hRec||''}</div><div class="gp-wp ${!aW?'fav':'dog'}">${p.hProb}%</div><div class="gp-wl">Win prob</div></div>
-    </div>
-    <div class="gp-barw"><div class="gp-bar"><div style="width:${p.aProb}%;background:${aW?'#2A6CB6':'#9B9788'};border-radius:4px 0 0 4px"></div><div style="width:${p.hProb}%;background:${!aW?'#0F6E56':'#9B9788'};border-radius:0 4px 4px 0"></div></div></div>
-    <div class="gp-pit"><div><span class="gp-plb">SP</span> ${awSP} (${p.det.aERA} ERA*)</div><div class="gp-ven">${venue}</div><div>${hoSP} (${p.det.hERA} ERA*) <span class="gp-plb">SP</span></div></div>
-    ${(gp.aPY?.length||gp.hPY?.length)?`<div style="font-size:10px;color:var(--tx3);padding:4px 18px">* Weighted 3-year ERA</div><div style="padding:0 18px 8px;display:flex;gap:16px;flex-wrap:wrap">${gp.aPY?.length?`<div><div style="font-size:10px;color:var(--tx3);margin-bottom:3px">${awSP}</div><div class="yr-grid" style="padding:0">${gp.aPY.map(yC).join('')}</div></div>`:''}${gp.hPY?.length?`<div><div style="font-size:10px;color:var(--tx3);margin-bottom:3px">${hoSP}</div><div class="yr-grid" style="padding:0">${gp.hPY.map(yC).join('')}</div></div>`:''}</div>`:''}
-    <div class="gp-fgrid">${p.edges.map(e=>`<div class="gp-fi"><span class="gp-fl">${e.name}</span><span class="gp-fv ${e.cls}">${e.who}</span></div>`).join('')}</div>
-    <div class="gp-verdict">${v}</div></div>`;
+function renderGameCard(gp){
+  var p=gp.pred;var aWin=p.aProb>=50;
+  var conf=Math.max(p.aProb,p.hProb);
+  var confL=conf>=65?'Strong pick':conf>=55?'Lean':'Toss-up';
+  var live=liveScores[gp.gamePk];
+  var isLive=live&&live.status==='Live';
+  var isFinal=live&&live.status==='Final';
+  var statusHTML='';
+  if(isLive){statusHTML='<div class="gc-live"><span class="live-dot"></span> <span class="score">'+live.awayScore+'-'+live.homeScore+'</span> <span class="inning">'+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span></div>'}
+  else if(isFinal){statusHTML='<div style="font-size:12px;color:var(--tx3);font-weight:600">Final '+live.awayScore+'-'+live.homeScore+'</div>'}
+  else{statusHTML='<div style="font-size:12px;color:var(--blu);font-weight:600">'+fTime(gp.gameDate)+'</div>'}
+
+  var batters=data?data.batters.filter(function(b){return b.gamePk===gp.gamePk}):[]; 
+  var awayB=batters.filter(function(b){return b.side==='away'});
+  var homeB=batters.filter(function(b){return b.side==='home'});
+
+  var batterSection='';
+  if(mode!=='game'&&(awayB.length||homeB.length)){
+    var key=mode==='hr'?'hrPct':'hitPct';
+    awayB.sort(function(a,b){return(+b[key])-(+a[key])});
+    homeB.sort(function(a,b){return(+b[key])-(+a[key])});
+    if(awayB.length)batterSection+='<div class="slb">'+gp.away+' batters</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
+    if(homeB.length)batterSection+='<div class="slb">'+gp.home+' batters</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
+  } else if(mode!=='game'){
+    batterSection='<div style="padding:16px;text-align:center;font-size:12px;color:var(--tx3)">Lineups not yet available</div>';
+  }
+
+  return '<div class="gc"><div class="gc-hd"><div style="display:flex;align-items:center;gap:8px"><span class="tm">'+gp.away+'</span><span class="vs_">@</span><span class="tm">'+gp.home+'</span></div>'+statusHTML+'</div>'
+    +(mode==='game'?'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div><div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div><div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div><div class="gc-verdict">'+getVerdict(gp)+'</div>':'')
+    +batterSection+'</div>';
 }
 
-// ====== RENDER BATTER ======
-function rB(b,i,m){
-  const pct=m==='hr'?b.hrPct:b.hitPct;const t=m==='hr'?hrT(pct):hitT(pct);
-  const mx=m==='hr'?18:98;const did='d'+b.id+m+i+Math.random().toString(36).slice(2,5);
-  const pills=m==='hr'?`<span class="pl pl-hr">${b.totHR||0}HR</span><span class="pl pl-iso">.${String(Math.round((b.iso||0)*1000)).padStart(3,'0')}ISO</span>`:`<span class="pl pl-av">.${String(Math.round((b.avg||0)*1000)).padStart(3,'0')}AVG</span><span class="pl pl-iso">.${String(Math.round((b.obp||0)*1000)).padStart(3,'0')}OBP</span>`;
-  const f=m==='hr'?b.hrF:b.hitF;const c=v=>+v>1.03?'fp':+v<.97?'fn':'fe';
-  let fH='';
-  if(f&&m==='hr')fH=`<div class="fs">Base:${f.base}%/PA · ISO:<span class="${c(f.iso)}">${f.iso}x</span> · Park:<span class="${c(f.park)}">${f.park}x</span> · Pitcher:<span class="${c(f.pitcher)}">${f.pitcher}x</span> · H2H:<span class="${c(f.h2h)}">${f.h2h}x</span> · <strong>${f.game}%</strong></div>`;
-  else if(f)fH=`<div class="fs">AVG:.${f.base} · Contact:<span class="${c(f.contact)}">${f.contact}x</span> · Pitcher:<span class="${c(f.pitcher)}">${f.pitcher}x</span> · Disc:<span class="${c(f.disc)}">${f.disc}x</span> · H2H:<span class="${c(f.h2h)}">${f.h2h}x</span> · <strong>${f.game}%</strong></div>`;
-  let h2hH='';if(b.h2h){const h=b.h2h;h2hH=`<div class="h2h-b"><strong>vs ${b.oppP}:</strong> ${h.ab}AB, ${h.h}H (.${h.ab>0?String(Math.round(h.avg*1000)).padStart(3,'0'):'---'}), ${h.hr}HR, ${h.bb}BB, ${h.so}K</div>`}
-  const yH=b.yrs?.length?`<div class="yr-grid" style="padding:4px 0">${b.yrs.map(y=>`<span class="yr-chip"><b>${y.yr}</b> .${(y.avg+'').replace('0.','').replace('.','').slice(0,3)} ${y.hr}HR</span>`).join('')}</div>`:'';
-  return`<div class="br" onclick="document.getElementById('${did}').classList.toggle('open')"><div class="brk ${tCls(t)}">${i+1}</div><div class="bi"><div class="bn">${b.name}</div><div class="bm">${b.pos||''} · ${b.team||''}</div></div><div class="bpills">${pills}</div><div class="bp"><div class="bpc t${t}">${pct}%</div><div class="bpl">${m==='hr'?'HR':'Hit'}</div><div class="bbar"><div class="bfill" style="width:${Math.min(+pct/mx*100,100)}%;background:${tCol(t)}"></div></div></div></div>
-  <div class="bd" id="${did}"><div class="dg"><div class="di"><div class="dl">wAVG</div><div class="dv">.${String(Math.round((b.avg||0)*1000)).padStart(3,'0')}</div></div><div class="di"><div class="dl">wOBP</div><div class="dv">.${String(Math.round((b.obp||0)*1000)).padStart(3,'0')}</div></div><div class="di"><div class="dl">wSLG</div><div class="dv">.${String(Math.round((b.slg||0)*1000)).padStart(3,'0')}</div></div><div class="di"><div class="dl">wISO</div><div class="dv">.${String(Math.round((b.iso||0)*1000)).padStart(3,'0')}</div></div><div class="di"><div class="dl">3yr HR</div><div class="dv">${b.totHR||0}</div></div><div class="di"><div class="dl">3yr AB</div><div class="dv">${b.totAB||0}</div></div></div>${yH}${h2hH}${fH}</div>`;
+function renderBatter(b,idx,m){
+  var pct=m==='hr'?b.hrPct:b.hitPct;var t=m==='hr'?hrT(pct):hitT(pct);
+  var did='d'+b.id+m+idx;
+  var h2hH=b.h2h?'<div class="h2h-b"><strong>vs '+b.oppP+':</strong> '+b.h2h.ab+'AB, '+b.h2h.h+'H, '+b.h2h.hr+'HR</div>':'';
+  return '<div class="br" onclick="document.getElementById(\''+did+'\').classList.toggle(\'open\')"><div class="brk '+tCls(t)+'">'+(idx+1)+'</div><div class="bi"><div class="bn">'+b.name+'</div><div class="bm">'+b.pos+' · '+b.team+'</div></div><div class="bp"><div class="bpc t'+t+'">'+pct+'%</div><div class="bpl">'+(m==='hr'?'HR':'Hit')+'</div></div></div>'
+    +'<div class="bd" id="'+did+'"><div class="dg"><div class="di"><div class="dl">AVG</div><div class="dv">.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">ISO</div><div class="dv">.'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">OBP</div><div class="dv">.'+String(Math.round((b.obp||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">3yr HR</div><div class="dv">'+(b.totHR||0)+'</div></div></div>'+h2hH+'</div>';
 }
 
-function rGC(g,m){
-  const aw=g.teams.away.team,ho=g.teams.home.team,venue=g.venue?.name||'';
-  const pf=gpf(venue,m);const pfL=pf>1.04?(m==='hr'?'HR-friendly':'Hitter-friendly'):pf<.96?(m==='hr'?'Pitcher park':'Hit-suppressing'):'Neutral';
-  const pfC=pf>1.04?'pk-h':pf<.96?'pk-c':'pk-n';
-  const awSP=g.teams.away.probablePitcher?.fullName||'TBD',hoSP=g.teams.home.probablePitcher?.fullName||'TBD';
-  const key=m==='hr'?'hrPct':'hitPct';
-  const bats=gameBatters[g.gamePk]||[];
-  const ab=bats.filter(x=>x.side==='away').sort((a,b)=>+b[key]-+a[key]);
-  const hb=bats.filter(x=>x.side==='home').sort((a,b)=>+b[key]-+a[key]);
-  let inner='';
-  if(ab.length)inner+=`<div class="slb">${aw.abbreviation} batters</div>`+ab.map((x,i)=>rB(x,i,m)).join('');
-  if(hb.length)inner+=`<div class="slb">${ho.abbreviation} batters</div>`+hb.map((x,i)=>rB(x,i,m)).join('');
-  if(!ab.length&&!hb.length)inner=`<div style="padding:24px;text-align:center;font-size:13px;color:var(--tx3)">Lineups not yet available — game predictions still shown above. Batter data populates ~2hrs before first pitch.</div>`;
-  return`<div class="gc"><div class="gc-hd"><div class="gc-tms"><span class="tm">${aw.abbreviation}</span><span class="vs_">@</span><span class="tm">${ho.abbreviation}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="pk-tag ${pfC}">${pfL}</span><span class="gp-status st-pre">${fTime(g.gameDate)}</span></div></div><div class="gc-pit"><div><span class="gp-plb">SP</span> ${awSP}</div><div class="gp-ven">${venue}</div><div>${hoSP} <span class="gp-plb">SP</span></div></div>${inner}</div>`;
+function getVerdict(gp){
+  var p=gp.pred;var conf=Math.max(p.aProb,p.hProb);var fav=p.aProb>=50?gp.away:gp.home;
+  if(conf>=65)return'Model strongly favors '+fav+'. Predicted: '+gp.away+' '+p.aRuns.toFixed(1)+' - '+gp.home+' '+p.hRuns.toFixed(1);
+  if(conf>=55)return'Slight lean '+fav+'. Predicted: '+gp.away+' '+p.aRuns.toFixed(1)+' - '+gp.home+' '+p.hRuns.toFixed(1);
+  return'Toss-up. Predicted: '+gp.away+' '+p.aRuns.toFixed(1)+' - '+gp.home+' '+p.hRuns.toFixed(1);
 }
 
-function rLB(m){
+function renderLB(m){
+  if(!data||!data.batters.length)return'<div class="empty"><h3>No batter data</h3><p>Check back when lineups are posted</p></div>';
   if(m==='game'){
-    if(!gamePreds.length)return'<div class="empty"><h3>No game predictions</h3></div>';
-    const s=[...gamePreds].sort((a,b)=>Math.max(b.pred.aProb,b.pred.hProb)-Math.max(a.pred.aProb,a.pred.hProb));
-    let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:15px;font-weight:700">Strongest picks</h3><span style="font-size:12px;color:var(--tx3)">${s.length} games</span></div><div class="lbc">`;
-    s.forEach((gp,i)=>{const g=gp.game,p=gp.pred,aW=p.aProb>=50;const fv=aW?g.teams.away.team.abbreviation:g.teams.home.team.abbreviation;const dg=aW?g.teams.home.team.abbreviation:g.teams.away.team.abbreviation;const c=Math.max(p.aProb,p.hProb);const cl=c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)';h+=`<div class="lbr"><div class="lbn ${i<3?'t3':''}">${i+1}</div><div class="lbi"><div class="lbna">${fv} over ${dg}</div><div class="lbsu">Pred: ${p.aRuns.toFixed(1)}-${p.hRuns.toFixed(1)}</div></div><div class="lbp"><div class="lbpv" style="color:${cl}">${c}%</div><div class="lbpl">Win</div></div></div>`});
+    var sorted=data.gamePreds.slice().sort(function(a,b){return Math.max(b.pred.aProb,b.pred.hProb)-Math.max(a.pred.aProb,a.pred.hProb)});
+    var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Strongest picks</div><div class="lbc">';
+    sorted.forEach(function(gp,i){var c=Math.max(gp.pred.aProb,gp.pred.hProb);var fav=gp.pred.aProb>=50?gp.away:gp.home;var dog=gp.pred.aProb>=50?gp.home:gp.away;h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+'</div><div class="lbsu">Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1)+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>'});
     return h+'</div>';
   }
-  const key=m==='hr'?'hrPct':'hitPct';const s=[...allBatters].sort((a,b)=>+b[key]-+a[key]).slice(0,30);
-  if(!s.length)return'<div class="empty"><h3>No batter data</h3><p>Lineups post ~2hrs before game time</p></div>';
-  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:15px;font-weight:700">Top ${m==='hr'?'HR':'hit'} candidates</h3><span style="font-size:12px;color:var(--tx3)">${allBatters.length} batters</span></div><div class="lbc">`;
-  s.forEach((b,i)=>{const pct=b[key];const t=m==='hr'?hrT(pct):hitT(pct);const cl=tCol(t);h+=`<div class="lbr"><div class="lbn ${i<3?'t3':''}">${i+1}</div><div class="lbi"><div class="lbna">${b.name}</div><div class="lbsu">${b.team} · ${m==='hr'?b.totHR+'HR · .'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+'ISO':'.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+'AVG'}${b.h2h?' · H2H:'+b.h2h.h+'/'+b.h2h.ab:''} vs ${b.oppP||'TBD'}</div></div><div class="lbp"><div class="lbpv" style="color:${cl}">${pct}%</div><div class="lbpl">${m==='hr'?'HR':'Hit'}</div></div></div>`});
+  var key=m==='hr'?'hrPct':'hitPct';
+  var sorted=data.batters.slice().sort(function(a,b){return(+b[key])-(+a[key])}).slice(0,25);
+  var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Top '+(m==='hr'?'HR':'hit')+' candidates</div><div class="lbc">';
+  sorted.forEach(function(b,i){var pct=b[key];var t=m==='hr'?hrT(pct):hitT(pct);h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+'</div><div class="lbsu">'+b.team+' · '+(m==='hr'?b.totHR+'HR · .'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+' ISO':'.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+' AVG')+' vs '+b.oppP+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>'});
   return h+'</div>';
 }
 
-function rHow(m){
-  if(m==='game')return`<div class="meth"><h3>&#9917; Game prediction model</h3><p>7 weighted factors using 3 years of data for opening-week accuracy.</p><div class="fml">Win prob = logistic(<br>&nbsp;&nbsp;winPct×0.80 + starterEdge×0.25 + battingEdge×0.15<br>&nbsp;&nbsp;+ last10×0.50 + runDiff×0.04 + homeField + parkFactor<br>)</div><p><strong>Year weighting:</strong> Last season=55%, 2yr ago=30%, 3yr ago=15%.</p><p><strong>Starters</strong> use weighted 3-year ERA. <strong>Batting</strong> uses weighted team OPS.</p><div class="mnote n-g">Transitions automatically to current-season data once enough games are played.</div></div>`;
-  if(m==='hr')return`<div class="meth"><h3>&#128165; HR prediction model</h3><p>5 factors per PA including pitcher vs batter history.</p><div class="fml">P(HR/PA) = baseRate × isoF × pitcherF × parkF × h2hF<br>P(≥1 HR/game) = 1 − (1 − P)<sup>3.8</sup></div><p><strong>H2H factor:</strong> If a batter has 5+ PA vs today's pitcher across 3 seasons, their HR rate adjusts probability up or down.</p><div class="mnote n-h2h">Example: 3 HR in 15 PA vs a pitcher = massive H2H boost.</div></div>`;
-  return`<div class="meth"><h3>&#127951; Hit prediction model</h3><p>6 factors per PA including matchup history.</p><div class="fml">P(Hit/PA) = baseAVG × contactF × pitcherF × parkF × discF × h2hF<br>P(≥1 Hit/game) = 1 − (1 − P)<sup>3.8</sup></div><p><strong>H2H factor:</strong> Batter's avg vs this specific pitcher over 3 years.</p><div class="mnote n-h2h">Batters who own a pitcher (.400+ career avg) get boosted. Batters who struggle (.100) get suppressed.</div></div>`;
-}
-
-// ====== MAIN RENDER ======
 function render(){
-  if(!loaded)return;const el=document.getElementById('out');
-  if(sub_==='main'){
-    if(!games.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use the arrows to navigate to a game day, or the app will auto-scan forward.</p></div>';return}
-    if(mode==='game')el.innerHTML=gamePreds.map(rGP).join('');
-    else el.innerHTML=games.map(g=>rGC(g,mode)).join('');
-  }else if(sub_==='lb'){el.innerHTML=rLB(mode)}
-  else el.innerHTML=rHow(mode);
+  var el=document.getElementById('out');
+  if(!data){el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';return}
+  if(!data.gamePreds||!data.gamePreds.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use arrows to navigate</p></div>';return}
+  if(sub_==='lb'){el.innerHTML=renderLB(mode);return}
+  el.innerHTML=data.gamePreds.map(renderGameCard).join('');
 }
 
-function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('act',b.dataset.m===m));render()}
-function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(b=>b.classList.toggle('act',b.dataset.s===s));render()}
-
-// ====== DATE NAVIGATION ======
-function changeDate(delta){
-  const d=new Date(currentDate);d.setDate(d.getDate()+delta);
-  currentDate=d;updateDateUI();loadDate()
-}
-function goToday(){currentDate=new Date();updateDateUI();loadDate()}
-
-// ====== SCAN FOR NEXT GAME DAY ======
-async function scanForGames(startDate,direction=1,maxDays=30){
-  const el=document.getElementById('out');
-  for(let i=0;i<maxDays;i++){
-    const d=new Date(startDate);d.setDate(d.getDate()+i*direction);
-    const ds=dateStr(d);
-    el.innerHTML=`<div class="ld"><div class="sp"></div><div style="font-size:14px">Scanning for games... checking ${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>`;
-    try{
-      const sched=await fJ(`${API}/schedule?sportId=1&date=${ds}&hydrate=probablePitcher(note),team,venue`);
-      const gms=sched.dates?.[0]?.games||[];
-      if(gms.length>0){
-        currentDate=d;updateDateUI();
-        return{date:d,games:gms};
-      }
-    }catch(e){}
-  }
-  return null;
-}
-
-// ====== LOAD DATA FOR DATE ======
-async function loadDate(){
-  if(loading)return;loading=true;loaded=false;
-  games=[];gameBatters={};allBatters=[];gamePreds=[];
-  doneSteps=0;totalSteps=1;
-
-  const el=document.getElementById('out');
-  const ba=document.getElementById('bannerArea');
+// ====== DATA LOADING — ONE CALL ======
+async function loadData(){
+  var el=document.getElementById('out');
+  data=null;liveScores={};
   updateDateUI();
+  el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions from server...</div>';
 
-  // Check cache first
-  const cached=getCache(currentDate);
-  if(cached&&cached.gamePreds){
-    games=cached.games||[];gamePreds=cached.gamePreds||[];
-    allBatters=cached.allBatters||[];gameBatters=cached.gameBatters||{};
-    document.getElementById('bg').textContent=games.length;
-    document.getElementById('bhr').textContent=allBatters.length||'—';
-    document.getElementById('bht').textContent=allBatters.length||'—';
-    ba.innerHTML=`<div class="banner b-live"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg><span>Loaded from cache. ${games.length} games, ${allBatters.length} batters analyzed.</span></div>`;
-    loaded=true;loading=false;render();return;
-  }
-
-  el.innerHTML='<div class="ld"><div class="sp"></div><div style="font-size:14px">Fetching schedule...</div></div>';
+  if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}
 
   try{
-    const ds=dateStr(currentDate);
-    const sched=await fJ(`${API}/schedule?sportId=1&date=${ds}&hydrate=probablePitcher(note),team,linescore,venue`);
-    let gms=sched.dates?.[0]?.games||[];
+    var r=await fetch('/api/data?date='+dateStr(currentDate));
+    if(!r.ok)throw new Error('Server returned '+r.status);
+    data=await r.json();
 
-    // If no games today, scan forward
-    if(gms.length===0){
-      ba.innerHTML=`<div class="banner b-info"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span>No games on ${currentDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})}. Scanning forward to find the next game day...</span></div>`;
-      const found=await scanForGames(currentDate,1,30);
-      if(!found){
-        el.innerHTML='<div class="empty"><h3>No games found in the next 30 days</h3><p>The MLB season may not have started yet. Try navigating to late March or early April.</p></div>';
-        ba.innerHTML=`<div class="banner b-info"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span>No regular season games found within 30 days. Use the arrows to navigate to Opening Day.</span></div>`;
-        loaded=true;loading=false;render();return;
-      }
-      gms=found.games;
-    }
+    document.getElementById('bg').textContent=data.gamePreds?data.gamePreds.length:0;
+    document.getElementById('bhr').textContent=data.batters?data.batters.length:'-';
+    document.getElementById('bht').textContent=data.batters?data.batters.length:'-';
 
-    games=gms;
-    ba.innerHTML=`<div class="banner b-hist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span>Using weighted stats from ${HIST_YRS[2]}–${HIST_YRS[0]} seasons + pitcher vs batter H2H matchups. ${games.length} games found.</span></div>`;
-
-    totalSteps=games.length*8;
-    document.getElementById('prog').style.display='';
-
-    // Standings (use last completed season)
-    let standings={};
-    for(const yr of [CUR_YR,CUR_YR-1]){
-      try{const stD=await fJ(`${API}/standings?leagueId=103,104&season=${yr}&standingsTypes=regularSeason&hydrate=team`);
-        for(const rec of(stD.records||[]))for(const tr of(rec.teamRecords||[])){const tid=tr.team?.id;if(!tid)continue;if(!standings[tid]||yr===CUR_YR){const l10=(tr.records?.splitRecords||[]).find(s=>s.type==='lastTen');standings[tid]={wins:tr.wins||0,losses:tr.losses||0,pct:parseFloat(tr.winningPercentage)||.5,rd:tr.runDifferential||0,gp:(tr.wins||0)+(tr.losses||0),l10w:l10?.wins,l10l:l10?.losses,streak:tr.streak?.streakCode||'',yr}}}
-      }catch(e){}
-    }
-    updateProg('Standings loaded');
-
-    // Team batting (prior season)
-    let teamBat={};
-    const teamIds=new Set();
-    games.forEach(g=>{teamIds.add(g.teams.away.team.id);teamIds.add(g.teams.home.team.id)});
-    for(const tid of teamIds){
-      for(const yr of [CUR_YR,CUR_YR-1]){
-        if(teamBat[tid])break;
-        try{const d=await fJ(`${API}/teams/${tid}/stats?stats=season&season=${yr}&group=hitting`);const s=d.stats?.[0]?.splits?.[0]?.stat;if(s&&(s.atBats||0)>100)teamBat[tid]={ops:parseFloat(s.ops)||.72}}catch(e){}
-      }
-    }
-    updateProg('Team batting loaded');
-
-    for(const g of games){
-      const pk=g.gamePk,venue=g.venue?.name||'';
-      const pfHR=gpf(venue,'hr'),pfHit=gpf(venue,'hit');
-      const hpId=g.teams.home.probablePitcher?.id,apId=g.teams.away.probablePitcher?.id;
-
-      let hpW=null,apW=null,hpYrs=[],apYrs=[];
-      if(hpId){const s=await getMultiPitching(hpId);hpW=weightPit(s);if(hpW)hpYrs=hpW.yrs;updateProg(g.teams.home.probablePitcher?.fullName||'Pitcher')}
-      if(apId){const s=await getMultiPitching(apId);apW=weightPit(s);if(apW)apYrs=apW.yrs;updateProg(g.teams.away.probablePitcher?.fullName||'Pitcher')}
-
-      // Game prediction
-      const aw=g.teams.away.team,ho=g.teams.home.team;
-      const aSt=standings[aw.id]||{wins:81,losses:81,pct:.5,rd:0,gp:162};
-      const hSt=standings[ho.id]||{wins:81,losses:81,pct:.5,rd:0,gp:162};
-      const pred=calcWin(
-        {abbr:aw.abbreviation,wp:aSt.pct,ops:(teamBat[aw.id]||{ops:.72}).ops,l10w:aSt.l10w,l10l:aSt.l10l,rdPG:aSt.gp>0?aSt.rd/aSt.gp:0,gp:aSt.gp},
-        {abbr:ho.abbreviation,wp:hSt.pct,ops:(teamBat[ho.id]||{ops:.72}).ops,l10w:hSt.l10w,l10l:hSt.l10l,rdPG:hSt.gp>0?hSt.rd/hSt.gp:0,gp:hSt.gp},
-        apW,hpW,venue
-      );
-      gamePreds.push({game:g,pred,aRec:`${aSt.wins}-${aSt.losses}`,hRec:`${hSt.wins}-${hSt.losses}`,aPY:apYrs,hPY:hpYrs});
-
-      // Batters
-      let batters=[];
-      try{
-        const box=await fJ(`${API}/game/${pk}/boxscore`);
-        const proc=async(data,side,oppPW,oppPId,oppPN)=>{
-          const order=(data.battingOrder||[]).slice(0,9);const players=data.players||{};
-          for(const pid of order){
-            const p=players[`ID${pid}`];if(!p)continue;
-            const bS=await getMultiHitting(pid);const bW=weightBat(bS);if(!bW)continue;
-            updateProg(p.person?.fullName||'Batter');
-            let h2h=null;if(oppPId)try{h2h=await getH2H(pid,oppPId)}catch(e){}
-            const hrR=calcHR(bW,oppPW,pfHR,h2h);
-            const hitR=calcHit(bW,oppPW,pfHit,h2h);
-            const bObj={id:pid,name:p.person?.fullName||'?',team:side==='away'?aw.abbreviation:ho.abbreviation,side,pos:p.position?.abbreviation||'',avg:bW.avg,slg:bW.slg,obp:bW.obp,iso:bW.iso,totHR:bW.totHR,totAB:bW.totAB,yrs:bW.yrs,hrPct:hrR.pct,hrF:hrR.f,hitPct:hitR.pct,hitF:hitR.f,h2h,oppP:oppPN||'TBD'};
-            batters.push(bObj);allBatters.push(bObj);
-          }
-        };
-        if(box.teams?.away)await proc(box.teams.away,'away',hpW,hpId,g.teams.home.probablePitcher?.fullName);
-        if(box.teams?.home)await proc(box.teams.home,'home',apW,apId,g.teams.away.probablePitcher?.fullName);
-      }catch(e){console.warn('Box err',pk,e)}
-      gameBatters[pk]=batters;
-      updateProg(`Game ${games.indexOf(g)+1}/${games.length}`);
-    }
-
-    document.getElementById('prog').style.display='none';
-    document.getElementById('bg').textContent=games.length;
-    document.getElementById('bhr').textContent=allBatters.length||'—';
-    document.getElementById('bht').textContent=allBatters.length||'—';
-
-    // Cache results
-    setCache(currentDate,{games,gamePreds,allBatters,gameBatters});
-
-    loaded=true;loading=false;render();
+    render();
+    startLiveRefresh();
   }catch(err){
-    console.error(err);
-    document.getElementById('prog').style.display='none';
-    el.innerHTML=`<div class="err"><strong>Couldn't load data</strong><p>${err.message}</p><p>Try refreshing or navigate to a different date.</p></div>`;
-    loading=false;
+    el.innerHTML='<div style="background:var(--redB);border-radius:14px;padding:24px;text-align:center"><strong style="color:var(--red)">Error loading data</strong><p style="font-size:13px;color:var(--red);margin-top:6px">'+err.message+'</p></div>';
   }
 }
 
-// ====== INIT ======
+// ====== LIVE SCORES — EVERY 10 SECONDS ======
+function startLiveRefresh(){
+  fetchScores();
+  refreshTimer=setInterval(fetchScores,10000);
+}
+
+async function fetchScores(){
+  try{
+    var r=await fetch('/api/scores?date='+dateStr(currentDate));
+    if(!r.ok)return;
+    var d=await r.json();
+    var anyLive=false;
+    (d.scores||[]).forEach(function(s){
+      liveScores[s.gamePk]=s;
+      if(s.status==='Live')anyLive=true;
+    });
+    document.getElementById('liveInd').style.display=anyLive?'':'none';
+    document.getElementById('refreshBar').style.display=anyLive?'':'none';
+    render();
+  }catch(e){}
+}
+
+// Init
 updateDateUI();
-loadDate();
+loadData();
 </script>
 </body>
 </html>
