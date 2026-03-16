@@ -1,4 +1,4 @@
-// api/data.js â Server-side MLB prediction engine
+// api/data.js — Server-side MLB prediction engine
 // Fetches all data, runs models, returns complete JSON in one call
 // Frontend makes ONE request and renders instantly
 
@@ -250,7 +250,7 @@ module.exports = async function handler(req, res) {
     var boxscores = {};
     boxResults.forEach(function(r) { boxscores[r.pk] = r.box; });
 
-    // Step 4: Process each game â compute game predictions + collect batter IDs
+    // Step 4: Process each game — compute game predictions + collect batter IDs
     var gamePreds = [];
     var allBatterJobs = []; // { pid, side, gamePk, oppPitcher, oppPitcherId, team }
 
@@ -301,7 +301,15 @@ module.exports = async function handler(req, res) {
               oppPW: side === 'away' ? hpW : apW,
               oppPId: side === 'away' ? hpId : apId,
               oppPName: side === 'away' ? gp.homeSP : gp.awaySP,
-              venue: venue
+              venue: venue,
+              gameStats: p.stats && p.stats.batting ? {
+                ab: p.stats.batting.atBats || 0,
+                h: p.stats.batting.hits || 0,
+                hr: p.stats.batting.homeRuns || 0,
+                rbi: p.stats.batting.rbi || 0,
+                bb: p.stats.batting.baseOnBalls || 0,
+                so: p.stats.batting.strikeOuts || 0
+              } : null
             });
           });
         });
@@ -339,7 +347,8 @@ module.exports = async function handler(req, res) {
           totHR: bW.totHR, totAB: bW.totAB, yrs: bW.yrs,
           hrPct: hrR.pct, hrF: hrR.f,
           hitPct: hitR.pct, hitF: hitR.f,
-          h2h: r.h2h, oppP: job.oppPName
+          h2h: r.h2h, oppP: job.oppPName,
+          gs: job.gameStats
         });
       });
     }
