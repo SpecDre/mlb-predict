@@ -30,7 +30,7 @@ async function fetchJSON(url) {
 // Fetch multi-season stats with parallel requests
 async function getMultiPitching(pid) {
   var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=pitching')
+    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=pitching&gameType=R')
   ));
   var seasons = {};
   results.forEach(function(d, i) {
@@ -42,7 +42,7 @@ async function getMultiPitching(pid) {
 
 async function getMultiHitting(pid) {
   var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=hitting')
+    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=hitting&gameType=R')
   ));
   var seasons = {};
   results.forEach(function(d, i) {
@@ -54,7 +54,7 @@ async function getMultiHitting(pid) {
 
 async function getH2H(bid, pid) {
   var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + bid + '/stats?stats=vsPlayer&opposingPlayerId=' + pid + '&season=' + yr + '&group=hitting')
+    fetchJSON(MLB + '/people/' + bid + '/stats?stats=vsPlayer&opposingPlayerId=' + pid + '&season=' + yr + '&group=hitting&gameType=R')
   ));
   var t = { ab: 0, h: 0, hr: 0, bb: 0, so: 0, pa: 0 };
   results.forEach(function(d) {
@@ -122,11 +122,12 @@ function calcHR(b, opp, pf, h2h) {
   var base = b.hrPA;
   var isoF = b.iso > 0 ? (b.iso / LG.iso) * .3 + .7 : 1;
   var pitF = 1;
-  if (opp) { pitF = opp.hr9 > 0 ? opp.hr9 / LG.hr9 : Math.max(.6, Math.min(1.5, opp.era / LG.era)); }
+  if (opp) { pitF = Math.max(.5, Math.min(1.5, opp.hr9 > 0 ? opp.hr9 / LG.hr9 : opp.era / LG.era)); }
   var h2hF = 1;
-  if (h2h && h2h.pa >= 5 && h2h.hrRate > 0) { h2hF = Math.max(.7, Math.min(1.8, 1 + (h2h.hrRate / LG.hrPA - 1) * .4)); }
-  var pp = Math.max(.005, Math.min(.14, base * isoF * pitF * (pf || 1) * h2hF));
+  if (h2h && h2h.pa >= 5 && h2h.hrRate > 0) { h2hF = Math.max(.8, Math.min(1.4, 1 + (h2h.hrRate / LG.hrPA - 1) * .3)); }
+  var pp = Math.max(.005, Math.min(.08, base * isoF * pitF * (pf || 1) * h2hF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
+  gm = Math.min(gm, .20);
   return { pct: (gm * 100).toFixed(1), f: { base: (base * 100).toFixed(2), iso: isoF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), h2h: h2hF.toFixed(2) } };
 }
 
@@ -207,11 +208,11 @@ module.exports = async function handler(req, res) {
     var teamBatPromises = [];
     teamIds.forEach(function(tid) {
       teamBatPromises.push(
-        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + YR + '&group=hitting')
+        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + YR + '&group=hitting&gameType=R')
           .then(function(d) { return { tid: tid, yr: YR, stat: d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat }; })
       );
       teamBatPromises.push(
-        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + (YR - 1) + '&group=hitting')
+        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + (YR - 1) + '&group=hitting&gameType=R')
           .then(function(d) { return { tid: tid, yr: YR - 1, stat: d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat }; })
       );
     });
