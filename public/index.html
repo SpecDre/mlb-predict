@@ -19,18 +19,15 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .sub-h{font-size:14px;color:var(--tx2);line-height:1.5}
-
 .date-nav{display:flex;align-items:center;gap:8px;margin:14px 0;justify-content:center}
 .date-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--brd);background:var(--sf);color:var(--tx);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
 .date-main{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;text-align:center;min-width:200px}
 .date-sub{font-size:11px;color:var(--tx3);text-align:center;margin-top:2px}
-
 .modes{display:flex;gap:4px;background:var(--sf2);border-radius:var(--r);padding:4px;margin-bottom:16px}
 .mbtn{flex:1;padding:10px 6px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;background:transparent;color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
 .mbtn.act{background:var(--sf);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .mbdg{font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px}
 .bdg-g{background:var(--tealB);color:var(--teal)}.bdg-hr{background:var(--redB);color:var(--red)}.bdg-h{background:var(--bluB);color:var(--blu)}
-
 .ld{text-align:center;padding:60px 20px;color:var(--tx2)}
 .sp{width:36px;height:36px;border:3px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -39,9 +36,57 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .gc{background:var(--sf);border-radius:var(--rl);border:1px solid var(--brd);margin-bottom:14px;overflow:hidden}
 .gc-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--sf2);border-bottom:1px solid var(--brd);flex-wrap:wrap;gap:6px}
 .tm{font-size:15px;font-weight:700}.vs_{font-size:11px;color:var(--tx3)}
-.gc-live{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
-.gc-live .score{font-family:'Playfair Display',serif;font-size:18px;font-weight:900}
-.gc-live .inning{font-size:10px;color:var(--tx3);text-transform:uppercase}
+
+/* Status badges */
+.st-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.st-live{background:var(--redB);color:var(--red)}
+.st-final{background:var(--sf2);color:var(--tx3)}
+.st-pre{background:var(--bluB);color:var(--blu)}
+
+/* Prediction result badge */
+.pred-result{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;margin-left:6px}
+.pred-correct{background:var(--grnB);color:var(--grn)}
+.pred-wrong{background:var(--redB);color:var(--red)}
+
+/* Live scoreboard */
+.live-board{padding:12px 16px;border-bottom:1px solid var(--brd);background:var(--sf)}
+.live-teams{display:flex;flex-direction:column;gap:4px}
+.live-team-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.live-team-row.batting{font-weight:700}
+.lt-name{width:40px;font-weight:700;font-size:14px}
+.lt-innings{display:flex;gap:0;flex:1}
+.lt-inn{width:24px;text-align:center;font-size:11px;padding:3px 0;color:var(--tx2)}
+.lt-inn.hdr{font-weight:600;color:var(--tx3);font-size:10px}
+.lt-rhe{display:flex;gap:0}
+.lt-rhe-val{width:28px;text-align:center;font-size:13px;font-weight:700;padding:3px 0}
+.lt-rhe-val.hdr{font-weight:600;color:var(--tx3);font-size:10px;font-weight:600}
+.live-situation{display:flex;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)}
+.live-count{font-size:11px;color:var(--tx2)}
+.live-count b{color:var(--tx);font-size:12px}
+.live-outs{display:flex;gap:3px}
+.live-out{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--tx3)}
+.live-out.filled{background:var(--acc);border-color:var(--acc)}
+/* Diamond */
+.diamond-wrap{position:relative;width:36px;height:36px}
+.diamond-base{position:absolute;width:9px;height:9px;border:1.5px solid var(--tx3);transform:rotate(45deg);background:transparent}
+.diamond-base.on{background:var(--acc);border-color:var(--acc)}
+.diamond-base.b1{right:0;top:50%;margin-top:-5px}
+.diamond-base.b2{left:50%;top:0;margin-left:-5px}
+.diamond-base.b3{left:0;top:50%;margin-top:-5px}
+
+/* Final score display */
+.final-score{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd)}
+.final-tm{display:flex;align-items:center;gap:10px}
+.final-abbr{font-size:18px;font-weight:900;font-family:'Playfair Display',serif}
+.final-abbr.winner{color:var(--grn)}
+.final-abbr.loser{color:var(--tx3)}
+.final-runs{font-size:28px;font-weight:900;font-family:'Playfair Display',serif}
+.final-runs.winner{color:var(--tx)}
+.final-runs.loser{color:var(--tx3)}
+.final-vs{font-size:11px;color:var(--tx3);padding:0 10px}
+.final-tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;margin-left:6px}
+.tag-w{background:var(--grnB);color:var(--grn)}
+.tag-l{background:var(--redB);color:var(--red)}
 
 /* Win prob display */
 .wp-row{display:flex;align-items:stretch}
@@ -55,7 +100,6 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .wp-vs{display:flex;align-items:center;justify-content:center;width:40px;font-size:11px;color:var(--tx3);font-weight:600}
 .wp-bar{padding:0 16px 10px;display:flex;gap:2px}
 .wp-bar>div{height:8px;border-radius:4px}
-
 .gc-pit{display:flex;justify-content:space-between;padding:8px 16px;border-top:1px solid var(--brd);font-size:12px;color:var(--tx2)}
 .gc-verdict{margin:4px 16px 12px;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;border-left:3px solid var(--acc);background:var(--sf2);color:var(--tx2)}
 
@@ -70,7 +114,6 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .bp{text-align:right;flex-shrink:0}.bpc{font-size:17px;font-weight:700}
 .bpc.tf{color:var(--red)}.bpc.th{color:var(--acc)}.bpc.to{color:var(--grn)}.bpc.tc{color:var(--tx3)}
 .bpl{font-size:8px;color:var(--tx3);text-transform:uppercase}
-
 .bd{display:none;padding:2px 16px 10px 48px}.bd.open{display:block}
 .dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px}
 .di{background:var(--sf2);border-radius:6px;padding:4px 8px}
@@ -86,14 +129,18 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .lbi{flex:1;min-width:0}.lbna{font-size:14px;font-weight:600}
 .lbsu{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lbpv{font-size:18px;font-weight:700;text-align:right}
-
 .stabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 .stab{padding:6px 14px;border:1px solid var(--brd);border-radius:20px;font-size:12px;font-weight:500;background:var(--sf);color:var(--tx2);cursor:pointer}
 .stab.act{background:var(--tx);color:var(--bg);border-color:var(--tx)}
-
 .empty{text-align:center;padding:50px 20px}.empty h3{font-size:16px;margin-bottom:6px}.empty p{font-size:13px;color:var(--tx2)}
 .refresh-bar{text-align:center;font-size:11px;color:var(--tx3);padding:6px 0}
-@media(max-width:600px){.wp-row{flex-direction:column}.wp-vs{width:100%;padding:2px 0}h1{font-size:22px}}
+
+/* Record tracker */
+.record-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;margin-bottom:14px;background:var(--sf);border-radius:var(--r);border:1px solid var(--brd);font-size:13px}
+.rec-item{display:flex;align-items:center;gap:4px;font-weight:600}
+.rec-item.correct{color:var(--grn)}.rec-item.wrong{color:var(--red)}.rec-item.pending{color:var(--tx3)}
+
+@media(max-width:600px){.wp-row{flex-direction:column}.wp-vs{width:100%;padding:2px 0}h1{font-size:22px}.lt-inn{width:20px;font-size:10px}.lt-rhe-val{width:24px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -108,66 +155,144 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
     </div>
     <p class="sub-h">Game picks, HR &amp; hit probabilities — instant server-side predictions</p>
   </div>
-
   <div class="date-nav">
     <button class="date-btn" onclick="changeDate(-1)">&#8249;</button>
     <div><div class="date-main" id="dateMain">Loading...</div><div class="date-sub" id="dateSub"></div></div>
     <button class="date-btn" onclick="changeDate(1)">&#8250;</button>
   </div>
-
+  <div id="recordBar"></div>
   <div class="modes">
     <button class="mbtn act" data-m="game" onclick="setMode('game')">&#9917; Games <span class="mbdg bdg-g" id="bg">-</span></button>
     <button class="mbtn" data-m="hr" onclick="setMode('hr')">&#128165; HR <span class="mbdg bdg-hr" id="bhr">-</span></button>
     <button class="mbtn" data-m="hit" onclick="setMode('hit')">&#127951; Hits <span class="mbdg bdg-h" id="bht">-</span></button>
   </div>
-
   <div class="stabs">
     <button class="stab act" data-s="main" onclick="setSub('main')">By game</button>
     <button class="stab" data-s="lb" onclick="setSub('lb')">Leaderboard</button>
   </div>
-
   <div id="refreshBar" class="refresh-bar" style="display:none">Live scores updating every 10s</div>
   <div id="out"></div>
 </div>
 <script>
 var mode='game',sub_='main',currentDate=new Date(),data=null,liveScores={},refreshTimer=null;
-
 var dateStr=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 var fTime=function(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})};
-
 function updateDateUI(){
   var d=currentDate;
   document.getElementById('dateMain').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   var today=new Date();var diff=Math.round((d-today)/(864e5));
   document.getElementById('dateSub').textContent=diff===0?'Today':diff===1?'Tomorrow':diff===-1?'Yesterday':diff>0?diff+' days ahead':Math.abs(diff)+' days ago';
 }
-
 function changeDate(delta){currentDate=new Date(currentDate.getTime()+delta*864e5);updateDateUI();loadData()}
 function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(function(b){b.classList.toggle('act',b.dataset.m===m)});render()}
 function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(function(b){b.classList.toggle('act',b.dataset.s===s)});render()}
 
-// Tier helpers
 function hrT(p){p=+p;return p>=12?'f':p>=7?'h':p>=4?'o':'c'}
 function hitT(p){p=+p;return p>=85?'f':p>=75?'h':p>=60?'o':'c'}
 function tCls(t){return'rk-'+t}
 function tCol(t){return t==='f'?'var(--red)':t==='h'?'var(--acc)':t==='o'?'var(--grn)':'var(--tx3)'}
 
+function getLiveData(gamePk){return liveScores[gamePk]||null}
+
+// Build linescore HTML for live/final games
+function renderLinescore(live, gp){
+  if(!live)return'';
+  var isLive=live.status==='Live';
+  var isFinal=live.status==='Final';
+  if(!isLive&&!isFinal)return'';
+
+  // Build inning headers
+  var maxInn=Math.max(live.inning||9,9);
+  var hdrCells='';
+  for(var i=1;i<=maxInn;i++)hdrCells+='<div class="lt-inn hdr">'+i+'</div>';
+
+  // We don't have per-inning data from the scores endpoint, but we have totals
+  // Show the total score prominently
+  var awayWon=isFinal&&live.awayScore>live.homeScore;
+  var homeWon=isFinal&&live.homeScore>live.awayScore;
+
+  var situationHTML='';
+  if(isLive){
+    var outs=live.outs||0;
+    situationHTML='<div class="live-situation">'
+      +'<div class="diamond-wrap">'
+      +'<div class="diamond-base b1'+(live.runnerOn1?' on':'')+'"></div>'
+      +'<div class="diamond-base b2'+(live.runnerOn2?' on':'')+'"></div>'
+      +'<div class="diamond-base b3'+(live.runnerOn3?' on':'')+'"></div>'
+      +'</div>'
+      +'<div class="live-count"><b>'+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</b></div>'
+      +'<div class="live-outs">'
+      +'<div class="live-out'+(outs>=1?' filled':'')+'"></div>'
+      +'<div class="live-out'+(outs>=2?' filled':'')+'"></div>'
+      +'</div>'
+      +'<div class="live-count">'+live.balls+'-'+live.strikes+'</div>'
+      +'</div>';
+  }
+
+  return '<div class="live-board">'
+    +'<div class="live-teams">'
+    +'<div class="live-team-row'+(isLive&&live.isTopInning?' batting':'')+'">'
+    +'<div class="lt-name" style="'+(awayWon?'color:var(--grn)':'')+'">'+(gp.away)+'</div>'
+    +'<div style="flex:1"></div>'
+    +'<div class="lt-rhe"><div class="lt-rhe-val hdr">R</div><div class="lt-rhe-val hdr">H</div><div class="lt-rhe-val hdr">E</div></div>'
+    +'</div>'
+    +'<div class="live-team-row'+(isLive&&live.isTopInning?' batting':'')+'">'
+    +'<div class="lt-name" style="'+(awayWon?'color:var(--grn)':'color:var(--tx3)')+'">'+(gp.away)+'</div>'
+    +'<div style="flex:1"></div>'
+    +'<div class="lt-rhe"><div class="lt-rhe-val" style="'+(awayWon?'color:var(--grn)':'')+'">'+live.awayScore+'</div><div class="lt-rhe-val">'+(live.awayHits||'-')+'</div><div class="lt-rhe-val">'+(live.awayErrors||0)+'</div></div>'
+    +'</div>'
+    +'<div class="live-team-row'+(isLive&&!live.isTopInning?' batting':'')+'">'
+    +'<div class="lt-name" style="'+(homeWon?'color:var(--grn)':'color:var(--tx3)')+'">'+(gp.home)+'</div>'
+    +'<div style="flex:1"></div>'
+    +'<div class="lt-rhe"><div class="lt-rhe-val" style="'+(homeWon?'color:var(--grn)':'')+'">'+live.homeScore+'</div><div class="lt-rhe-val">'+(live.homeHits||'-')+'</div><div class="lt-rhe-val">'+(live.homeErrors||0)+'</div></div>'
+    +'</div>'
+    +'</div>'
+    +situationHTML
+    +'</div>';
+}
+
 function renderGameCard(gp){
   var p=gp.pred;var aWin=p.aProb>=50;
   var conf=Math.max(p.aProb,p.hProb);
-  var confL=conf>=65?'Strong pick':conf>=55?'Lean':'Toss-up';
-  var live=liveScores[gp.gamePk];
+  var live=getLiveData(gp.gamePk);
   var isLive=live&&live.status==='Live';
   var isFinal=live&&live.status==='Final';
-  var statusHTML='';
-  if(isLive){statusHTML='<div class="gc-live"><span class="live-dot"></span> <span class="score">'+live.awayScore+'-'+live.homeScore+'</span> <span class="inning">'+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span></div>'}
-  else if(isFinal){statusHTML='<div style="font-size:12px;color:var(--tx3);font-weight:600">Final '+live.awayScore+'-'+live.homeScore+'</div>'}
-  else{statusHTML='<div style="font-size:12px;color:var(--blu);font-weight:600">'+fTime(gp.gameDate)+'</div>'}
+  var predictedWinner=aWin?gp.away:gp.home;
 
-  var batters=data?data.batters.filter(function(b){return b.gamePk===gp.gamePk}):[]; 
+  // Status + prediction result
+  var statusHTML='';
+  if(isLive){
+    statusHTML='<span class="st-badge st-live"><span class="live-dot" style="width:6px;height:6px;margin-right:3px;vertical-align:middle"></span> '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span>';
+  } else if(isFinal){
+    var actualWinner=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+    var predCorrect=actualWinner===predictedWinner;
+    statusHTML='<span class="st-badge st-final">Final</span>'
+      +'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
+      +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>';
+  } else {
+    statusHTML='<span class="st-badge st-pre">'+fTime(gp.gameDate)+'</span>';
+  }
+
+  // Final score section (replaces or supplements win prob for final games)
+  var scoreSection='';
+  if(isFinal){
+    var awayWon=live.awayScore>live.homeScore;
+    scoreSection='<div class="final-score">'
+      +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.away+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
+      +'<div class="final-runs '+(awayWon?'winner':'loser')+'">'+live.awayScore+'</div>'
+      +'<div class="final-vs">-</div>'
+      +'<div class="final-runs '+(awayWon?'loser':'winner')+'">'+live.homeScore+'</div>'
+      +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.home+'</span></div>'
+      +'</div>';
+  }
+
+  // Live board (linescore + situation)
+  var liveBoard=renderLinescore(live, gp);
+
+  // Batters section
+  var batters=data?data.batters.filter(function(b){return b.gamePk===gp.gamePk}):[];
   var awayB=batters.filter(function(b){return b.side==='away'});
   var homeB=batters.filter(function(b){return b.side==='home'});
-
   var batterSection='';
   if(mode!=='game'&&(awayB.length||homeB.length)){
     var key=mode==='hr'?'hrPct':'hitPct';
@@ -175,13 +300,38 @@ function renderGameCard(gp){
     homeB.sort(function(a,b){return(+b[key])-(+a[key])});
     if(awayB.length)batterSection+='<div class="slb">'+gp.away+' batters</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
     if(homeB.length)batterSection+='<div class="slb">'+gp.home+' batters</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
-  } else if(mode!=='game'){
+  } else if(mode!=='game'&&!awayB.length){
     batterSection='<div style="padding:16px;text-align:center;font-size:12px;color:var(--tx3)">Lineups not yet available</div>';
   }
 
-  return '<div class="gc"><div class="gc-hd"><div style="display:flex;align-items:center;gap:8px"><span class="tm">'+gp.away+'</span><span class="vs_">@</span><span class="tm">'+gp.home+'</span></div>'+statusHTML+'</div>'
-    +(mode==='game'?'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div><div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div><div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div><div class="gc-verdict">'+getVerdict(gp)+'</div>':'')
-    +batterSection+'</div>';
+  // Game mode content
+  var gameContent='';
+  if(mode==='game'){
+    if(isFinal){
+      // Show final score prominently, then prediction below
+      gameContent=scoreSection+liveBoard
+        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
+        +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore>live.homeScore?gp.away:gp.home)+' wins '+live.awayScore+'-'+live.homeScore+'</div>';
+    } else if(isLive){
+      gameContent=liveBoard
+        +'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Pre-game</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Pre-game</div></div></div>'
+        +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
+        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>';
+    } else {
+      gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
+        +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
+        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
+        +'<div class="gc-verdict">'+getVerdict(gp)+'</div>';
+    }
+  } else {
+    // HR/Hits mode — show live score header if live/final
+    if(isLive||isFinal){
+      gameContent=(isFinal?scoreSection:liveBoard);
+    }
+  }
+
+  return '<div class="gc"><div class="gc-hd"><div style="display:flex;align-items:center;gap:8px"><span class="tm">'+gp.away+'</span><span class="vs_">@</span><span class="tm">'+gp.home+'</span></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'+statusHTML+'</div></div>'
+    +gameContent+batterSection+'</div>';
 }
 
 function renderBatter(b,idx,m){
@@ -199,12 +349,45 @@ function getVerdict(gp){
   return'Toss-up. Predicted: '+gp.away+' '+p.aRuns.toFixed(1)+' - '+gp.home+' '+p.hRuns.toFixed(1);
 }
 
+function renderRecordBar(){
+  if(!data||!data.gamePreds)return;
+  var correct=0,wrong=0,pending=0;
+  data.gamePreds.forEach(function(gp){
+    var live=getLiveData(gp.gamePk);
+    if(!live||live.status!=='Final'){pending++;return}
+    var predicted=gp.pred.aProb>=50?gp.away:gp.home;
+    var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+    if(predicted===actual)correct++;else wrong++;
+  });
+  var total=correct+wrong;
+  if(total===0){document.getElementById('recordBar').innerHTML='';return}
+  var pct=total>0?Math.round(correct/total*100):0;
+  document.getElementById('recordBar').innerHTML='<div class="record-bar">'
+    +'<span class="rec-item correct">&#10003; '+correct+' Correct</span>'
+    +'<span class="rec-item wrong">&#10007; '+wrong+' Wrong</span>'
+    +(pending>0?'<span class="rec-item pending">&#9679; '+pending+' Pending</span>':'')
+    +'<span style="color:var(--tx);font-weight:700">'+pct+'% accuracy</span>'
+    +'</div>';
+}
+
 function renderLB(m){
   if(!data||!data.batters.length)return'<div class="empty"><h3>No batter data</h3><p>Check back when lineups are posted</p></div>';
   if(m==='game'){
     var sorted=data.gamePreds.slice().sort(function(a,b){return Math.max(b.pred.aProb,b.pred.hProb)-Math.max(a.pred.aProb,a.pred.hProb)});
     var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Strongest picks</div><div class="lbc">';
-    sorted.forEach(function(gp,i){var c=Math.max(gp.pred.aProb,gp.pred.hProb);var fav=gp.pred.aProb>=50?gp.away:gp.home;var dog=gp.pred.aProb>=50?gp.home:gp.away;h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+'</div><div class="lbsu">Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1)+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>'});
+    sorted.forEach(function(gp,i){
+      var c=Math.max(gp.pred.aProb,gp.pred.hProb);
+      var fav=gp.pred.aProb>=50?gp.away:gp.home;
+      var dog=gp.pred.aProb>=50?gp.home:gp.away;
+      var live=getLiveData(gp.gamePk);
+      var resultHTML='';
+      if(live&&live.status==='Final'){
+        var actual=live.awayScore>live.homeScore?gp.away:gp.home;
+        var ok=fav===actual;
+        resultHTML=' <span class="pred-result '+(ok?'pred-correct':'pred-wrong')+'" style="font-size:9px">'+(ok?'&#10003;':'&#10007;')+'</span>';
+      }
+      h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+resultHTML+'</div><div class="lbsu">'+(live&&live.status==='Final'?'Final '+live.awayScore+'-'+live.homeScore:'Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1))+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>'
+    });
     return h+'</div>';
   }
   var key=m==='hr'?'hrPct':'hitPct';
@@ -218,60 +401,46 @@ function render(){
   var el=document.getElementById('out');
   if(!data){el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';return}
   if(!data.gamePreds||!data.gamePreds.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use arrows to navigate</p></div>';return}
+  renderRecordBar();
   if(sub_==='lb'){el.innerHTML=renderLB(mode);return}
   el.innerHTML=data.gamePreds.map(renderGameCard).join('');
 }
 
-// ====== DATA LOADING — ONE CALL ======
 async function loadData(){
   var el=document.getElementById('out');
   data=null;liveScores={};
   updateDateUI();
-  el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions from server...</div>';
-
+  document.getElementById('recordBar').innerHTML='';
+  el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';
   if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}
-
   try{
     var r=await fetch('/api/data?date='+dateStr(currentDate));
     if(!r.ok)throw new Error('Server returned '+r.status);
     data=await r.json();
-
     document.getElementById('bg').textContent=data.gamePreds?data.gamePreds.length:0;
     document.getElementById('bhr').textContent=data.batters?data.batters.length:'-';
     document.getElementById('bht').textContent=data.batters?data.batters.length:'-';
-
-    render();
-    startLiveRefresh();
+    render();startLiveRefresh();
   }catch(err){
     el.innerHTML='<div style="background:var(--redB);border-radius:14px;padding:24px;text-align:center"><strong style="color:var(--red)">Error loading data</strong><p style="font-size:13px;color:var(--red);margin-top:6px">'+err.message+'</p></div>';
   }
 }
 
-// ====== LIVE SCORES — EVERY 10 SECONDS ======
-function startLiveRefresh(){
-  fetchScores();
-  refreshTimer=setInterval(fetchScores,10000);
-}
-
+function startLiveRefresh(){fetchScores();refreshTimer=setInterval(fetchScores,10000)}
 async function fetchScores(){
   try{
     var r=await fetch('/api/scores?date='+dateStr(currentDate));
     if(!r.ok)return;
     var d=await r.json();
     var anyLive=false;
-    (d.scores||[]).forEach(function(s){
-      liveScores[s.gamePk]=s;
-      if(s.status==='Live')anyLive=true;
-    });
+    (d.scores||[]).forEach(function(s){liveScores[s.gamePk]=s;if(s.status==='Live')anyLive=true});
     document.getElementById('liveInd').style.display=anyLive?'':'none';
     document.getElementById('refreshBar').style.display=anyLive?'':'none';
     render();
   }catch(e){}
 }
 
-// Init
-updateDateUI();
-loadData();
+updateDateUI();loadData();
 </script>
 </body>
 </html>
