@@ -137,6 +137,33 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 
 /* Record tracker */
 .record-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;margin-bottom:14px;background:var(--sf);border-radius:var(--r);border:1px solid var(--brd);font-size:13px}
+
+/* Compact score for HR/Hits tabs */
+.compact-score{padding:8px 16px;font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--brd)}
+.compact-score .cs-final{font-weight:700;color:var(--tx3);text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+.compact-score .cs-scores{font-weight:700;color:var(--tx)}
+.compact-score .cs-live{color:var(--red);font-weight:700}
+
+/* Tier labels */
+.tier-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 5px;border-radius:3px;margin-top:1px}
+.tier-fire{background:var(--redB);color:var(--red)}
+.tier-warm{background:var(--accL);color:var(--acc)}
+.tier-mild{background:var(--grnB);color:var(--grn)}
+.tier-cold{background:var(--sf2);color:var(--tx3)}
+
+/* Game result line on batter */
+.game-line{font-size:11px;font-weight:600;margin-top:1px}
+.gl-hr{color:var(--red)}
+.gl-hit{color:var(--grn)}
+.gl-out{color:var(--tx3)}
+.gl-pending{color:var(--tx3);font-weight:400;font-style:italic}
+
+/* HR result badge */
+.hr-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.hr-yes{background:var(--redB);color:var(--red)}
+.hr-no{background:var(--sf2);color:var(--tx3)}
+.hit-yes{background:var(--grnB);color:var(--grn)}
+.hit-no{background:var(--sf2);color:var(--tx3)}
 .rec-item{display:flex;align-items:center;gap:4px;font-weight:600}
 .rec-item.correct{color:var(--grn)}.rec-item.wrong{color:var(--red)}.rec-item.pending{color:var(--tx3)}
 
@@ -361,23 +388,27 @@ function renderGameCard(gp){
   var isFinal=live&&live.status==='Final';
   var predictedWinner=aWin?gp.away:gp.home;
 
-  // Status + prediction result
+  // Status — mode-aware
   var statusHTML='';
   if(isLive){
     statusHTML='<span class="st-badge st-live"><span class="live-dot" style="width:6px;height:6px;margin-right:3px;vertical-align:middle"></span> '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span>';
   } else if(isFinal){
-    var actualWinner=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
-    var predCorrect=actualWinner===predictedWinner;
-    statusHTML='<span class="st-badge st-final">Final</span>'
-      +'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
-      +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>';
+    if(mode==='game'){
+      var actualWinner=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+      var predCorrect=actualWinner===predictedWinner;
+      statusHTML='<span class="st-badge st-final">Final</span>'
+        +'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
+        +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>';
+    } else {
+      statusHTML='<span class="st-badge st-final">Final '+live.awayScore+'-'+live.homeScore+'</span>';
+    }
   } else {
     statusHTML='<span class="st-badge st-pre">'+fTime(gp.gameDate)+'</span>';
   }
 
-  // Final score section (replaces or supplements win prob for final games)
+  // Final score section (only for Games tab)
   var scoreSection='';
-  if(isFinal){
+  if(isFinal&&mode==='game'){
     var awayWon=live.awayScore>live.homeScore;
     scoreSection='<div class="final-score">'
       +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.away+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
@@ -388,10 +419,9 @@ function renderGameCard(gp){
       +'</div>';
   }
 
-  // Live board (linescore + situation)
   var liveBoard=renderLinescore(live, gp);
 
-  // Batters section
+  // Batters section (HR/Hits tabs)
   var batters=data?data.batters.filter(function(b){return b.gamePk===gp.gamePk}):[];
   var awayB=batters.filter(function(b){return b.side==='away'});
   var homeB=batters.filter(function(b){return b.side==='home'});
@@ -400,8 +430,15 @@ function renderGameCard(gp){
     var key=mode==='hr'?'hrPct':'hitPct';
     awayB.sort(function(a,b){return(+b[key])-(+a[key])});
     homeB.sort(function(a,b){return(+b[key])-(+a[key])});
-    if(awayB.length)batterSection+='<div class="slb">'+gp.away+' batters</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
-    if(homeB.length)batterSection+='<div class="slb">'+gp.home+' batters</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode)}).join('');
+    // Show vs pitcher header for each team
+    if(awayB.length){
+      var awayOpp=awayB[0].oppP||'TBD';
+      batterSection+='<div class="slb">'+gp.away+' vs '+awayOpp+'</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
+    }
+    if(homeB.length){
+      var homeOpp=homeB[0].oppP||'TBD';
+      batterSection+='<div class="slb">'+gp.home+' vs '+homeOpp+'</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
+    }
   } else if(mode!=='game'&&!awayB.length){
     batterSection='<div style="padding:16px;text-align:center;font-size:12px;color:var(--tx3)">Lineups not yet available</div>';
   }
@@ -410,7 +447,6 @@ function renderGameCard(gp){
   var gameContent='';
   if(mode==='game'){
     if(isFinal){
-      // Show final score prominently, then prediction below
       gameContent=scoreSection+liveBoard
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+gp.awaySP+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+gp.homeSP+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore>live.homeScore?gp.away:gp.home)+' wins '+live.awayScore+'-'+live.homeScore+'</div>';
@@ -426,9 +462,11 @@ function renderGameCard(gp){
         +'<div class="gc-verdict">'+getVerdict(gp)+'</div>';
     }
   } else {
-    // HR/Hits mode — show live score header if live/final
-    if(isLive||isFinal){
-      gameContent=(isFinal?scoreSection:liveBoard);
+    // HR/Hits mode — compact score for live/final, nothing for upcoming
+    if(isLive){
+      gameContent='<div class="compact-score"><span class="cs-live">&#9679; LIVE '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span><span class="cs-scores">'+gp.away+' '+live.awayScore+' - '+gp.home+' '+live.homeScore+'</span></div>';
+    } else if(isFinal){
+      // no extra content — score is already in the header badge
     }
   }
 
@@ -436,12 +474,50 @@ function renderGameCard(gp){
     +gameContent+batterSection+'</div>';
 }
 
-function renderBatter(b,idx,m){
-  var pct=m==='hr'?b.hrPct:b.hitPct;var t=m==='hr'?hrT(pct):hitT(pct);
+function renderBatter(b,idx,m,isFinal){
+  var pct=m==='hr'?b.hrPct:b.hitPct;
+  var t=m==='hr'?hrT(pct):hitT(pct);
   var did='d'+b.id+m+idx;
-  var h2hH=b.h2h?'<div class="h2h-b"><strong>vs '+b.oppP+':</strong> '+b.h2h.ab+'AB, '+b.h2h.h+'H, '+b.h2h.hr+'HR</div>':'';
-  return '<div class="br" onclick="document.getElementById(\''+did+'\').classList.toggle(\'open\')"><div class="brk '+tCls(t)+'">'+(idx+1)+'</div><div class="bi"><div class="bn">'+b.name+'</div><div class="bm">'+b.pos+' · '+b.team+'</div></div><div class="bp"><div class="bpc t'+t+'">'+pct+'%</div><div class="bpl">'+(m==='hr'?'HR':'Hit')+'</div></div></div>'
-    +'<div class="bd" id="'+did+'"><div class="dg"><div class="di"><div class="dl">AVG</div><div class="dv">.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">ISO</div><div class="dv">.'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">OBP</div><div class="dv">.'+String(Math.round((b.obp||0)*1000)).padStart(3,'0')+'</div></div><div class="di"><div class="dl">3yr HR</div><div class="dv">'+(b.totHR||0)+'</div></div></div>'+h2hH+'</div>';
+
+  // Tier label
+  var tierHTML='';
+  if(m==='hr'){
+    tierHTML=+pct>=10?'<span class="tier-label tier-fire">&#128293; Hot</span>':+pct>=5?'<span class="tier-label tier-warm">Warm</span>':+pct>=3?'<span class="tier-label tier-mild">Mild</span>':'<span class="tier-label tier-cold">Long shot</span>';
+  } else {
+    tierHTML=+pct>=80?'<span class="tier-label tier-fire">&#128293; Hot</span>':+pct>=65?'<span class="tier-label tier-warm">Likely</span>':+pct>=50?'<span class="tier-label tier-mild">Toss-up</span>':'<span class="tier-label tier-cold">Unlikely</span>';
+  }
+
+  // Game result line
+  var resultHTML='';
+  if(b.gs&&isFinal){
+    var gs=b.gs;
+    var line=gs.h+'-for-'+gs.ab;
+    if(gs.hr>0)line+=', '+gs.hr+' HR';
+    if(gs.rbi>0)line+=', '+gs.rbi+' RBI';
+    if(gs.bb>0)line+=', '+gs.bb+' BB';
+    if(m==='hr'){
+      resultHTML=gs.hr>0?'<div class="game-line gl-hr">'+line+' <span class="hr-badge hr-yes">&#10003; HR</span></div>':'<div class="game-line gl-out">'+line+' <span class="hr-badge hr-no">No HR</span></div>';
+    } else {
+      resultHTML=gs.h>0?'<div class="game-line gl-hit">'+line+' <span class="hr-badge hit-yes">&#10003; Hit</span></div>':'<div class="game-line gl-out">'+line+' <span class="hr-badge hit-no">No hit</span></div>';
+    }
+  } else if(!isFinal){
+    resultHTML='<div class="game-line gl-pending">vs '+b.oppP+'</div>';
+  }
+
+  // Expanded detail
+  var h2hH=b.h2h?'<div class="h2h-b"><strong>vs '+b.oppP+':</strong> '+b.h2h.ab+'AB, '+b.h2h.h+'H, '+b.h2h.hr+'HR (career)</div>':'';
+
+  return '<div class="br" onclick="document.getElementById(\''+did+'\').classList.toggle(\'open\')">'
+    +'<div class="brk '+tCls(t)+'">'+(idx+1)+'</div>'
+    +'<div class="bi"><div class="bn">'+b.name+'</div>'+resultHTML+'</div>'
+    +'<div class="bp"><div class="bpc t'+t+'">'+pct+'%</div>'+tierHTML+'</div>'
+    +'</div>'
+    +'<div class="bd" id="'+did+'"><div class="dg">'
+    +'<div class="di"><div class="dl">AVG</div><div class="dv">.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+'</div></div>'
+    +'<div class="di"><div class="dl">ISO</div><div class="dv">.'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+'</div></div>'
+    +'<div class="di"><div class="dl">OBP</div><div class="dv">.'+String(Math.round((b.obp||0)*1000)).padStart(3,'0')+'</div></div>'
+    +'<div class="di"><div class="dl">3yr HR</div><div class="dv">'+(b.totHR||0)+'</div></div>'
+    +'</div>'+h2hH+'</div>';
 }
 
 function getVerdict(gp){
@@ -453,27 +529,49 @@ function getVerdict(gp){
 
 function renderRecordBar(){
   if(!data||!data.gamePreds)return;
-  var correct=0,wrong=0,pending=0;
-  data.gamePreds.forEach(function(gp){
-    var live=getLiveData(gp.gamePk);
-    if(!live||live.status!=='Final'){pending++;return}
-    var predicted=gp.pred.aProb>=50?gp.away:gp.home;
-    var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
-    if(predicted===actual)correct++;else wrong++;
-  });
-  var total=correct+wrong;
-  if(total===0){document.getElementById('recordBar').innerHTML='';return}
-  var pct=total>0?Math.round(correct/total*100):0;
-  document.getElementById('recordBar').innerHTML='<div class="record-bar">'
-    +'<span class="rec-item correct">&#10003; '+correct+' Correct</span>'
-    +'<span class="rec-item wrong">&#10007; '+wrong+' Wrong</span>'
-    +(pending>0?'<span class="rec-item pending">&#9679; '+pending+' Pending</span>':'')
-    +'<span style="color:var(--tx);font-weight:700">'+pct+'% accuracy</span>'
-    +'</div>';
+  if(mode==='game'){
+    var correct=0,wrong=0,pending=0;
+    data.gamePreds.forEach(function(gp){
+      var live=getLiveData(gp.gamePk);
+      if(!live||live.status!=='Final'){pending++;return}
+      var predicted=gp.pred.aProb>=50?gp.away:gp.home;
+      var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+      if(predicted===actual)correct++;else wrong++;
+    });
+    var total=correct+wrong;
+    if(total===0){document.getElementById('recordBar').innerHTML='';return}
+    var pct=total>0?Math.round(correct/total*100):0;
+    document.getElementById('recordBar').innerHTML='<div class="record-bar">'
+      +'<span class="rec-item correct">&#10003; '+correct+' Correct</span>'
+      +'<span class="rec-item wrong">&#10007; '+wrong+' Wrong</span>'
+      +(pending>0?'<span class="rec-item pending">&#9679; '+pending+' Pending</span>':'')
+      +'<span style="color:var(--tx);font-weight:700">'+pct+'% accuracy</span>'
+      +'</div>';
+  } else {
+    // HR/Hits accuracy
+    var key=mode==='hr'?'hrPct':'hitPct';
+    var hit=0,miss=0,pending=0,topHit=0,topMiss=0;
+    data.batters.forEach(function(b){
+      if(!b.gs){pending++;return}
+      var success=mode==='hr'?(b.gs.hr>0):(b.gs.h>0);
+      if(success)hit++;else miss++;
+      if(+b[key]>=10&&mode==='hr'||+b[key]>=70&&mode!=='hr'){if(success)topHit++;else topMiss++;}
+    });
+    var total=hit+miss;
+    if(total===0){document.getElementById('recordBar').innerHTML='';return}
+    var topTotal=topHit+topMiss;
+    var lbl=mode==='hr'?'HRs hit':'Hits';
+    document.getElementById('recordBar').innerHTML='<div class="record-bar">'
+      +'<span class="rec-item correct">&#10003; '+hit+' '+lbl+'</span>'
+      +'<span class="rec-item wrong">&#10007; '+miss+' Without</span>'
+      +(topTotal>0?'<span style="color:var(--acc);font-weight:600">Top picks: '+topHit+'/'+topTotal+'</span>':'')
+      +(pending>0?'<span class="rec-item pending">&#9679; '+pending+' Pending</span>':'')
+      +'</div>';
+  }
 }
 
 function renderLB(m){
-  if(!data||!data.batters.length)return'<div class="empty"><h3>No batter data</h3><p>Check back when lineups are posted</p></div>';
+  if(!data||!data.batters.length&&m!=='game')return'<div class="empty"><h3>No batter data</h3><p>Check back when lineups are posted</p></div>';
   if(m==='game'){
     var sorted=data.gamePreds.slice().sort(function(a,b){return Math.max(b.pred.aProb,b.pred.hProb)-Math.max(a.pred.aProb,a.pred.hProb)});
     var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Strongest picks</div><div class="lbc">';
@@ -488,14 +586,24 @@ function renderLB(m){
         var ok=fav===actual;
         resultHTML=' <span class="pred-result '+(ok?'pred-correct':'pred-wrong')+'" style="font-size:9px">'+(ok?'&#10003;':'&#10007;')+'</span>';
       }
-      h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+resultHTML+'</div><div class="lbsu">'+(live&&live.status==='Final'?'Final '+live.awayScore+'-'+live.homeScore:'Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1))+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>'
+      h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+resultHTML+'</div><div class="lbsu">'+(live&&live.status==='Final'?'Final '+live.awayScore+'-'+live.homeScore:'Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1))+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>';
     });
     return h+'</div>';
   }
   var key=m==='hr'?'hrPct':'hitPct';
   var sorted=data.batters.slice().sort(function(a,b){return(+b[key])-(+a[key])}).slice(0,25);
-  var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Top '+(m==='hr'?'HR':'hit')+' candidates</div><div class="lbc">';
-  sorted.forEach(function(b,i){var pct=b[key];var t=m==='hr'?hrT(pct):hitT(pct);h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+'</div><div class="lbsu">'+b.team+' · '+(m==='hr'?b.totHR+'HR · .'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+' ISO':'.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+' AVG')+' vs '+b.oppP+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>'});
+  var lbl=m==='hr'?'HR':'hit';
+  var h='<div style="font-size:15px;font-weight:700;margin-bottom:12px">Top '+lbl+' candidates</div><div class="lbc">';
+  sorted.forEach(function(b,i){
+    var pct=b[key];var t=m==='hr'?hrT(pct):hitT(pct);
+    // Result badge
+    var resHTML='';
+    if(b.gs){
+      var ok=m==='hr'?(b.gs.hr>0):(b.gs.h>0);
+      resHTML=ok?'<span class="hr-badge '+(m==='hr'?'hr-yes':'hit-yes')+'">&#10003; '+(m==='hr'?b.gs.hr+' HR':b.gs.h+'-'+b.gs.ab)+'</span>':'<span class="hr-badge '+(m==='hr'?'hr-no':'hit-no')+'">'+b.gs.h+'-'+b.gs.ab+'</span>';
+    }
+    h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+' '+resHTML+'</div><div class="lbsu">'+b.team+' vs '+b.oppP+' &middot; '+(m==='hr'?b.totHR+'HR &middot; .'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+' ISO':'.'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+' AVG')+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>';
+  });
   return h+'</div>';
 }
 
