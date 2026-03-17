@@ -646,6 +646,16 @@ function renderGameCard(gp){
   var aSPDisplay=gp.awaySP+handBadge(gp.awaySPHand);
   var hSPDisplay=gp.homeSP+handBadge(gp.homeSPHand);
 
+  // v3 win model detail row
+  var v3HTML='';
+  if(mode==='game'&&p.det&&p.det.aWHIP){
+    v3HTML='<div style="padding:4px 16px 8px;font-size:10px;color:var(--tx3);display:flex;justify-content:space-between;border-top:1px solid var(--brd)">'
+      +'<span>WHIP '+p.det.aWHIP+' &middot; K/BB '+p.det.aKBB+' &middot; Rest '+p.det.aRest+'d</span>'
+      +'<span>BP ERA: '+p.det.aBPera+' / '+p.det.hBPera+'</span>'
+      +'<span>WHIP '+p.det.hWHIP+' &middot; K/BB '+p.det.hKBB+' &middot; Rest '+p.det.hRest+'d</span>'
+      +'</div>';
+  }
+
   var gameContent='';
   if(isCancelled){
     gameContent='<div style="padding:24px;text-align:center;font-size:13px;color:var(--tx3)">Game cancelled / not played</div>';
@@ -653,7 +663,7 @@ function renderGameCard(gp){
     if(isFinal){
       gameContent=scoreSection+liveBoard
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
-        +pythHTML+wxHTML
+        +v3HTML+pythHTML+wxHTML
         +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore===live.homeScore?'TIE ':live.awayScore>live.homeScore?gp.away+' wins ':gp.home+' wins ')+live.awayScore+'-'+live.homeScore+'</div>';
     } else if(isLive){
       var liveWP=calcLiveWP(p.aProb, live.awayScore, live.homeScore, live.inning, live.isTopInning, live.outs);
@@ -667,7 +677,7 @@ function renderGameCard(gp){
       gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
         +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#8B909A')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#8B909A')+'"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
-        +pythHTML+wxHTML
+        +v3HTML+pythHTML+wxHTML
         +'<div class="gc-verdict">'+getVerdict(gp)+'</div>';
     }
   } else {
