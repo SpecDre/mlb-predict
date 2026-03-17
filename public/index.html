@@ -111,11 +111,11 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .br{display:flex;align-items:center;padding:8px 16px;gap:8px;cursor:pointer}
 .br:hover{background:var(--sf2)}
 .brk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
-.rk-f{background:var(--redB);color:var(--red)}.rk-h{background:var(--accL);color:var(--acc)}.rk-o{background:var(--grnB);color:var(--grn)}.rk-c{background:var(--sf2);color:var(--tx3)}
+.rk-f{background:var(--grnB);color:var(--grn)}.rk-h{background:var(--tealB);color:var(--teal)}.rk-o{background:var(--sf2);color:var(--tx2)}.rk-c{background:var(--redB);color:var(--red)}
 .bi{flex:1;min-width:0}.bn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm{font-size:11px;color:var(--tx3)}
 .bp{text-align:right;flex-shrink:0}.bpc{font-size:17px;font-weight:700}
-.bpc.tf{color:var(--red)}.bpc.th{color:var(--acc)}.bpc.to{color:var(--grn)}.bpc.tc{color:var(--tx3)}
+.bpc.tf{color:var(--grn)}.bpc.th{color:var(--teal)}.bpc.to{color:var(--tx2)}.bpc.tc{color:var(--red)}
 .bpl{font-size:8px;color:var(--tx3);text-transform:uppercase}
 .bd{display:none;padding:2px 16px 10px 48px}.bd.open{display:block}
 .dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px}
@@ -149,10 +149,10 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 
 /* Tier labels */
 .tier-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 5px;border-radius:3px;margin-top:1px}
-.tier-fire{background:var(--redB);color:var(--red)}
-.tier-warm{background:var(--accL);color:var(--acc)}
-.tier-mild{background:var(--grnB);color:var(--grn)}
-.tier-cold{background:var(--sf2);color:var(--tx3)}
+.tier-fire{background:var(--grnB);color:var(--grn)}
+.tier-warm{background:var(--tealB);color:var(--teal)}
+.tier-mild{background:var(--sf2);color:var(--tx2)}
+.tier-cold{background:var(--redB);color:var(--red)}
 
 /* Game result line on batter */
 .game-line{font-size:11px;font-weight:600;margin-top:1px}
@@ -396,7 +396,7 @@ function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(function(b)
 function hrT(p){p=+p;return p>=12?'f':p>=7?'h':p>=4?'o':'c'}
 function hitT(p){p=+p;return p>=78?'f':p>=72?'h':p>=65?'o':'c'}
 function tCls(t){return'rk-'+t}
-function tCol(t){return t==='f'?'var(--red)':t==='h'?'var(--acc)':t==='o'?'var(--grn)':'var(--tx3)'}
+function tCol(t){return t==='f'?'var(--grn)':t==='h'?'var(--teal)':t==='o'?'var(--tx2)':'var(--red)'}
 
 function getLiveData(gamePk){return liveScores[gamePk]||null}
 
