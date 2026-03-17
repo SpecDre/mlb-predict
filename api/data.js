@@ -1,5 +1,6 @@
-// api/data.js — MLB Predict v2: Enhanced prediction engine
-// Upgrades: Pythagorean wins, platoon splits, Statcast barrel/EV, calibrated model
+// api/data.js — MLB Predict v3: Full prediction engine
+// v2: Pythagorean wins, platoon splits, Statcast barrel/EV, calibrated model
+// v3: Weather (temp+wind), fly ball rate, bullpen HR/9, lineup position, dynamic HR cap
 // All data fetched server-side, one JSON response to frontend
 
 const MLB = 'https://statsapi.mlb.com/api/v1';
@@ -13,8 +14,32 @@ const PYTH_EXP = 1.83; // Pythagorean exponent (Pythagenpat)
 const LG = {
   hrPA:.033, hr9:1.25, iso:.150, avg:.248, whip:1.28, h9:8.4, babip:.295,
   era:4.20, rpg:4.6, ops:.720, slg:.400, obp:.320,
-  barrelPct:8.5, exitVelo:88.5, xHR:.033
+  barrelPct:8.5, exitVelo:88.5, xHR:.033,
+  fbPct:35.0, bullpenHR9:1.15
 };
+
+// --- Weather factor for HR probability ---
+// Warmer temps = more carry; wind out = HR boost; wind in = HR suppression
+function calcWeatherFactor(weather) {
+  if (!weather) return { temp: 1, wind: 1, combined: 1 };
+  var tempF = 1;
+  var temp = parseInt(weather.temp) || 72;
+  // Every 10°F above 72 adds ~3% HR probability, below subtracts
+  tempF = Math.max(.88, Math.min(1.12, 1 + (temp - 72) * .003));
+
+  var windF = 1;
+  var windSpeed = parseInt(weather.wind) || 0;
+  var windDir = (weather.wind || '').toLowerCase();
+  if (windSpeed >= 5) {
+    if (windDir.includes('out') || windDir.includes('l to r') || windDir.includes('r to l')) {
+      windF = Math.min(1.15, 1 + windSpeed * .008);
+    } else if (windDir.includes('in')) {
+      windF = Math.max(.85, 1 - windSpeed * .008);
+    }
+    // crosswind or calm = neutral
+  }
+  return { temp: +tempF.toFixed(3), wind: +windF.toFixed(3), combined: +(tempF * windF).toFixed(3) };
+}
 
 // Park factors
 const PF_HR={'Coors Field':1.38,'Great American Ball Park':1.18,'Yankee Stadium':1.15,'Guaranteed Rate Field':1.10,'Globe Life Field':1.08,'Wrigley Field':1.07,'Citizens Bank Park':1.07,'Fenway Park':1.05,'Minute Maid Park':1.04,'Target Field':1.03,'Nationals Park':1.02,'Chase Field':1.02,'Truist Park':1.01,'Busch Stadium':1.00,'American Family Field':1.00,'Rogers Centre':.99,'Angel Stadium':.98,'Comerica Park':.97,'PNC Park':.97,'Progressive Field':.96,'Kauffman Stadium':.95,'Tropicana Field':.95,'loanDepot park':.94,'T-Mobile Park':.93,'Dodger Stadium':.93,'Citi Field':.92,'Oracle Park':.88,'Petco Park':.90,'Oakland Coliseum':.87,'Oriole Park at Camden Yards':1.06};
@@ -204,7 +229,7 @@ async function getH2H(bid, pid) {
 
 // --- Weighted stat aggregators ---
 function weightPit(seasons) {
-  var wE = 0, wW = 0, wHR = 0, wH = 0, wTot = 0;
+  var wE = 0, wW = 0, wHR = 0, wH = 0, wFB = 0, wTot = 0;
   var yrs = [];
   for (var yr in seasons) {
     var s = seasons[yr];
@@ -217,11 +242,15 @@ function weightPit(seasons) {
     wW += (parseFloat(s.whip) || LG.whip) * fw;
     wHR += (parseFloat(s.homeRunsPer9) || LG.hr9) * fw;
     wH += (parseFloat(s.hitsPer9) || LG.h9) * fw;
+    // Fly ball rate: flyOuts / (flyOuts + groundOuts) as proxy
+    var fo = (s.airOuts || 0), go = (s.groundOuts || 0);
+    var fb = (fo + go) > 0 ? (fo / (fo + go)) * 100 : LG.fbPct;
+    wFB += fb * fw;
     wTot += fw;
     yrs.push({ yr: yr, ip: s.inningsPitched || '0', era: s.era || '-', whip: s.whip || '-' });
   }
   if (wTot === 0) return null;
-  return { era: wE / wTot, whip: wW / wTot, hr9: wHR / wTot, h9: wH / wTot, yrs: yrs };
+  return { era: wE / wTot, whip: wW / wTot, hr9: wHR / wTot, h9: wH / wTot, fbPct: wFB / wTot, yrs: yrs };
 }
 
 function weightBat(seasons) {
@@ -252,8 +281,9 @@ function weightBat(seasons) {
 
 // ========== PREDICTION MODELS (v2 calibrated) ==========
 
-function calcHR(b, opp, pf, h2h, platoon, statcast) {
+function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   var base = b.hrPA;
+  extras = extras || {};
 
   // ISO factor — power indicator
   var isoF = b.iso > 0 ? (b.iso / LG.iso) * .3 + .7 : 1;
@@ -261,6 +291,12 @@ function calcHR(b, opp, pf, h2h, platoon, statcast) {
   // Pitcher factor — HR tendency
   var pitF = 1;
   if (opp) { pitF = Math.max(.55, Math.min(1.45, opp.hr9 > 0 ? opp.hr9 / LG.hr9 : opp.era / LG.era)); }
+
+  // Fly ball rate factor — pitchers who allow more fly balls = more HR chances
+  var fbF = 1;
+  if (opp && opp.fbPct > 0) {
+    fbF = Math.max(.85, Math.min(1.20, opp.fbPct / LG.fbPct));
+  }
 
   // H2H factor
   var h2hF = 1;
@@ -282,18 +318,45 @@ function calcHR(b, opp, pf, h2h, platoon, statcast) {
     scF = Math.max(.70, Math.min(1.50, brlRatio * .35 + .65));
   }
 
-  var pp = Math.max(.003, Math.min(.07, base * isoF * pitF * (pf || 1) * h2hF * platF * scF));
+  // Weather factor (temp + wind)
+  var wxF = extras.weather ? extras.weather.combined : 1;
+
+  // Bullpen exposure factor — anytime HR spans 9 innings, not just starter
+  // If opposing bullpen has high HR/9, boost probability
+  var bpF = 1;
+  if (extras.bullpenHR9 > 0) {
+    // Starter faces ~60% of PAs, bullpen ~40%
+    var bpRatio = extras.bullpenHR9 / LG.bullpenHR9;
+    bpF = Math.max(.90, Math.min(1.15, .6 + .4 * bpRatio));
+  }
+
+  // Lineup position factor — batters 1-4 get more PAs and see more strikes with protection
+  var loF = 1;
+  if (extras.lineupPos) {
+    var lp = extras.lineupPos;
+    if (lp <= 2) loF = 1.08;       // Leadoff/2-hole: extra PA, good pitches
+    else if (lp <= 4) loF = 1.10;  // 3/4 hole: most protection, best pitches to hit
+    else if (lp <= 6) loF = 1.02;  // 5/6: moderate
+    else loF = 0.95;               // 7-9: fewer PAs, less protection
+  }
+
+  var pp = Math.max(.003, Math.min(.08, base * isoF * pitF * fbF * (pf || 1) * h2hF * platF * scF * wxF * bpF * loF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
-  gm = Math.max(.005, Math.min(gm, .18)); // v2 cap: 18%
+
+  // v3 dynamic cap: base 18%, but allow up to 25% when multiple factors align
+  var factorBoost = (wxF > 1.03 ? 1 : 0) + (fbF > 1.05 ? 1 : 0) + (scF > 1.15 ? 1 : 0) + ((pf || 1) > 1.05 ? 1 : 0);
+  var cap = factorBoost >= 3 ? .25 : factorBoost >= 2 ? .22 : .18;
+  gm = Math.max(.005, Math.min(gm, cap));
 
   return {
     pct: (gm * 100).toFixed(1),
-    f: { base: (base * 100).toFixed(2), iso: isoF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2) }
+    f: { base: (base * 100).toFixed(2), iso: isoF.toFixed(2), pitcher: pitF.toFixed(2), flyball: fbF.toFixed(2), park: (pf || 1).toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2), weather: wxF.toFixed(2), bullpen: bpF.toFixed(2), lineup: loF.toFixed(2) }
   };
 }
 
-function calcHit(b, opp, pf, h2h, platoon, statcast) {
+function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
   var base = b.avg;
+  extras = extras || {};
   var cF = b.babip > 0 ? (b.babip / LG.babip) * .25 + .75 : 1;
 
   var pitF = 1;
@@ -319,12 +382,21 @@ function calcHit(b, opp, pf, h2h, platoon, statcast) {
     scF = Math.max(.85, Math.min(1.20, xbaRatio * .25 + .75));
   }
 
-  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * h2hF * platF * scF));
+  // Lineup position — top of order gets more PAs
+  var loF = 1;
+  if (extras.lineupPos) {
+    var lp = extras.lineupPos;
+    if (lp <= 4) loF = 1.04;       // Top 4: extra PA opportunity
+    else if (lp <= 6) loF = 1.00;
+    else loF = 0.97;               // Bottom third: fewer PAs
+  }
+
+  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * h2hF * platF * scF * loF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
 
   return {
     pct: (gm * 100).toFixed(1),
-    f: { base: (base * 1000).toFixed(0), contact: cF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), disc: dF.toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2) }
+    f: { base: (base * 1000).toFixed(0), contact: cF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), disc: dF.toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2), lineup: loF.toFixed(2) }
   };
 }
 
@@ -377,7 +449,7 @@ module.exports = async function handler(req, res) {
   try {
     // Step 1: Schedule + Standings + Statcast (parallel)
     var [schedData, standData, standDataPrev, statcastData] = await Promise.all([
-      fetchJSON(MLB + '/schedule?sportId=1&date=' + date + '&hydrate=probablePitcher(note),team,linescore,venue'),
+      fetchJSON(MLB + '/schedule?sportId=1&date=' + date + '&hydrate=probablePitcher(note),team,linescore,venue,weather'),
       fetchJSON(MLB + '/standings?leagueId=103,104&season=' + YR + '&standingsTypes=regularSeason&hydrate=team'),
       fetchJSON(MLB + '/standings?leagueId=103,104&season=' + (YR - 1) + '&standingsTypes=regularSeason&hydrate=team'),
       fetchStatcast()
@@ -385,7 +457,7 @@ module.exports = async function handler(req, res) {
 
     var games = (schedData && schedData.dates && schedData.dates[0] && schedData.dates[0].games) || [];
     if (games.length === 0) {
-      return res.status(200).json({ date: date, games: [], batters: [], gamePreds: [], noGames: true, modelVersion: 'v2' });
+      return res.status(200).json({ date: date, games: [], batters: [], gamePreds: [], noGames: true, modelVersion: 'v3' });
     }
 
     // Parse standings with RS/RA for Pythagorean
@@ -421,10 +493,11 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    // Step 2: Team batting stats
+    // Step 2: Team batting + pitching stats (for bullpen HR/9)
     var teamIds = new Set();
     games.forEach(function(g) { teamIds.add(g.teams.away.team.id); teamIds.add(g.teams.home.team.id); });
     var teamBatPromises = [];
+    var teamPitPromises = [];
     teamIds.forEach(function(tid) {
       teamBatPromises.push(
         fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + YR + '&group=hitting&gameType=R')
@@ -434,12 +507,35 @@ module.exports = async function handler(req, res) {
         fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + (YR - 1) + '&group=hitting&gameType=R')
           .then(function(d) { return { tid: tid, yr: YR - 1, stat: d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat }; })
       );
+      // Team pitching stats for bullpen HR/9 estimate
+      teamPitPromises.push(
+        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + YR + '&group=pitching&gameType=R')
+          .then(function(d) { return { tid: tid, yr: YR, stat: d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat }; })
+      );
+      teamPitPromises.push(
+        fetchJSON(MLB + '/teams/' + tid + '/stats?stats=season&season=' + (YR - 1) + '&group=pitching&gameType=R')
+          .then(function(d) { return { tid: tid, yr: YR - 1, stat: d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat }; })
+      );
     });
-    var teamBatResults = await Promise.all(teamBatPromises);
+    var [teamBatResults, teamPitResults] = await Promise.all([
+      Promise.all(teamBatPromises),
+      Promise.all(teamPitPromises)
+    ]);
     var teamBat = {};
     teamBatResults.forEach(function(r) {
       if (r.stat && (r.stat.atBats || 0) > 100 && (!teamBat[r.tid] || r.yr === YR)) {
         teamBat[r.tid] = { ops: parseFloat(r.stat.ops) || .720 };
+      }
+    });
+    // Extract team pitching HR/9 as a proxy for bullpen HR/9
+    // (team HR/9 minus starter tends toward bullpen, but team-level is a reasonable proxy)
+    var teamBullpen = {};
+    teamPitResults.forEach(function(r) {
+      if (r.stat && (!teamBullpen[r.tid] || r.yr === YR)) {
+        var ip = parseFloat(r.stat.inningsPitched) || 0;
+        if (ip > 50) {
+          teamBullpen[r.tid] = { hr9: parseFloat(r.stat.homeRunsPer9) || LG.bullpenHR9 };
+        }
       }
     });
 
@@ -490,6 +586,14 @@ module.exports = async function handler(req, res) {
       var aSt = standings[aw.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162, rs: LG.rpg, ra: LG.rpg };
       var hSt = standings[ho.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162, rs: LG.rpg, ra: LG.rpg };
 
+      // Parse weather from MLB API hydration
+      var rawWeather = g.weather || null;
+      var weather = calcWeatherFactor(rawWeather);
+
+      // Bullpen HR/9 for each team (opponent's bullpen matters to the batting team)
+      var awayBullpenHR9 = (teamBullpen[aw.id] || {}).hr9 || LG.bullpenHR9;
+      var homeBullpenHR9 = (teamBullpen[ho.id] || {}).hr9 || LG.bullpenHR9;
+
       var pred = calcWin(
         { abbr: aw.abbreviation, wp: aSt.pct, ops: (teamBat[aw.id] || { ops: .72 }).ops, l10: aSt.l10w ? aSt.l10w / 10 : .5, rdPG: aSt.gp > 0 ? aSt.rd / aSt.gp : 0, gp: aSt.gp, rs: aSt.rs || LG.rpg, ra: aSt.ra || LG.rpg },
         { abbr: ho.abbreviation, wp: hSt.pct, ops: (teamBat[ho.id] || { ops: .72 }).ops, l10: hSt.l10w ? hSt.l10w / 10 : .5, rdPG: hSt.gp > 0 ? hSt.rd / hSt.gp : 0, gp: hSt.gp, rs: hSt.rs || LG.rpg, ra: hSt.ra || LG.rpg },
@@ -504,13 +608,16 @@ module.exports = async function handler(req, res) {
         homeSP: g.teams.home.probablePitcher && g.teams.home.probablePitcher.fullName || 'TBD',
         awaySPHand: pitcherHands[apId] || '?',
         homeSPHand: pitcherHands[hpId] || '?',
+        awaySPFB: apW ? apW.fbPct.toFixed(1) : null,
+        homeSPFB: hpW ? hpW.fbPct.toFixed(1) : null,
         aRec: aSt.wins + '-' + aSt.losses, hRec: hSt.wins + '-' + hSt.losses,
         aPitYrs: apW ? apW.yrs : [], hPitYrs: hpW ? hpW.yrs : [],
+        weather: rawWeather ? { temp: rawWeather.temp || null, wind: rawWeather.wind || null, condition: rawWeather.condition || null, factor: weather } : null,
         pred: pred
       };
       gamePreds.push(gObj);
 
-      // Collect batters from boxscore
+      // Collect batters from boxscore with lineup position
       var box = boxscores[g.gamePk];
       if (box && box.teams) {
         ['away', 'home'].forEach(function(side) {
@@ -518,10 +625,12 @@ module.exports = async function handler(req, res) {
           if (!td) return;
           var order = (td.battingOrder || []).slice(0, 9);
           var players = td.players || {};
-          order.forEach(function(pid) {
+          order.forEach(function(pid, orderIdx) {
             var p = players['ID' + pid];
             if (!p) return;
             var oppPitcherId = side === 'away' ? hpId : apId;
+            // Opposing bullpen HR/9 (the bullpen the batter will face later in the game)
+            var oppBullpenHR9 = side === 'away' ? homeBullpenHR9 : awayBullpenHR9;
             allBatterJobs.push({
               pid: pid, side: side, gamePk: g.gamePk,
               name: p.person && p.person.fullName || 'Unknown',
@@ -532,6 +641,9 @@ module.exports = async function handler(req, res) {
               oppPName: side === 'away' ? gObj.homeSP : gObj.awaySP,
               oppPHand: pitcherHands[oppPitcherId] || 'R',
               venue: venue,
+              lineupPos: orderIdx + 1,
+              weather: weather,
+              bullpenHR9: oppBullpenHR9,
               gameStats: p.stats && p.stats.batting ? {
                 ab: p.stats.batting.atBats || 0,
                 h: p.stats.batting.hits || 0,
@@ -572,8 +684,9 @@ module.exports = async function handler(req, res) {
         var sc = statcastData[job.pid] || null;
         if (sc) statcastCount++;
 
-        var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h, r.platoon, sc);
-        var hitR = calcHit(bW, job.oppPW, pfHit, r.h2h, r.platoon, sc);
+        var extras = { weather: job.weather, bullpenHR9: job.bullpenHR9, lineupPos: job.lineupPos };
+        var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h, r.platoon, sc, extras);
+        var hitR = calcHit(bW, job.oppPW, pfHit, r.h2h, r.platoon, sc, extras);
 
         allBatters.push({
           id: job.pid, name: job.name, team: job.team, side: job.side,
@@ -584,6 +697,7 @@ module.exports = async function handler(req, res) {
           hitPct: hitR.pct, hitF: hitR.f,
           h2h: r.h2h, oppP: job.oppPName,
           oppPHand: job.oppPHand,
+          lineupPos: job.lineupPos,
           platoon: r.platoon ? { avg: r.platoon.avg.toFixed(3), hrPA: (r.platoon.hrPA * 100).toFixed(2), pa: r.platoon.pa, hand: r.platoon.hand } : null,
           statcast: sc ? { barrelPct: sc.barrelPct, exitVelo: sc.exitVelo, xBA: sc.xBA, xSLG: sc.xSLG } : null,
           gs: job.gameStats
@@ -593,12 +707,16 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       date: date,
-      modelVersion: 'v2',
+      modelVersion: 'v3',
       modelInfo: {
         pythagorean: true,
         platoonSplits: true,
         statcast: statcastCount > 0,
         statcastCount: statcastCount,
+        weather: true,
+        flyBallRate: true,
+        bullpenHR9: true,
+        lineupPosition: true,
         calibrated: true
       },
       games: games.map(function(g) {
