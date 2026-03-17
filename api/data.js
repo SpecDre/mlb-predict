@@ -394,15 +394,23 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   var h2hF = 1;
   if (h2h && h2h.pa >= 6) {
     var sampleW = Math.min(h2h.pa / 40, 1);
+    // Minimum floor so even small samples move the needle
+    sampleW = Math.max(sampleW, .35);
     if (h2h.hrRate > 0) {
       // Has hit HRs against this pitcher — boost
       var rawH2H = 1 + (h2h.hrRate / LG.hrPA - 1) * .20;
       h2hF = 1 + (Math.max(.85, Math.min(1.25, rawH2H)) - 1) * sampleW;
     } else if (h2h.ab >= 6 && h2h.hr === 0) {
-      // Zero HRs in 6+ AB — penalize based on how many AB with no HR
-      // 8 AB with 0 HR = mild penalty, 20+ AB with 0 HR = strong penalty
-      var penaltyRaw = Math.max(.75, 1 - (h2h.ab / 60));
-      h2hF = 1 + (penaltyRaw - 1) * sampleW;
+      // Zero HRs — but did he at least get hits?
+      if (h2h.h === 0) {
+        // 0 hits AND 0 HR = can't touch this pitcher at all. Hard penalty.
+        var penaltyRaw = Math.max(.60, .82 - (h2h.ab / 80));
+        h2hF = 1 + (penaltyRaw - 1) * sampleW;
+      } else {
+        // Gets hits but no HR off this pitcher — moderate penalty
+        var penaltyRaw = Math.max(.70, .90 - (h2h.ab / 100));
+        h2hF = 1 + (penaltyRaw - 1) * sampleW;
+      }
     }
   }
 
@@ -470,16 +478,17 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
   var h2hF = 1;
   if (h2h && h2h.pa >= 6) {
     var sampleW = Math.min(h2h.pa / 40, 1);
+    sampleW = Math.max(sampleW, .35);
     if (h2h.ab >= 5 && h2h.avg > 0) {
-      // Has hits against this pitcher — boost or penalize based on avg vs league
+      // Has hits — boost or penalize based on avg vs league
       var rawH2H = 1 + (h2h.avg / LG.avg - 1) * .20;
       h2hF = 1 + (Math.max(.80, Math.min(1.25, rawH2H)) - 1) * sampleW;
     } else if (h2h.ab >= 6 && h2h.h === 0) {
-      // Zero hits in 6+ AB — this pitcher owns him
-      var penaltyRaw = Math.max(.70, 1 - (h2h.ab / 40));
+      // Zero hits — this pitcher completely owns him
+      var penaltyRaw = Math.max(.55, .78 - (h2h.ab / 60));
       h2hF = 1 + (penaltyRaw - 1) * sampleW;
     } else if (h2h.ab >= 5 && h2h.avg < LG.avg) {
-      // Below league average against this pitcher — mild penalty
+      // Below league average — mild penalty
       var rawH2H = 1 + (h2h.avg / LG.avg - 1) * .20;
       h2hF = 1 + (Math.max(.80, Math.min(1.0, rawH2H)) - 1) * sampleW;
     }
