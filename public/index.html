@@ -6,8 +6,8 @@
 <title>MLB Predict</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F5F3EE;--sf:#FFF;--sf2:#EDE9E0;--tx:#1A1A18;--tx2:#6B6960;--tx3:#9B9788;--acc:#BA7517;--accL:#FAEEDA;--grn:#4A8C1C;--grnB:#EAF3DE;--red:#C43028;--redB:#FCEBEB;--blu:#2A6CB6;--bluB:#E6F1FB;--pur:#6B5BC0;--purB:#EEEDFE;--teal:#0F6E56;--tealB:#E1F5EE;--brd:rgba(0,0,0,.08);--r:10px;--rl:14px}
-@media(prefers-color-scheme:dark){:root{--bg:#1A1918;--sf:#252422;--sf2:#302E2A;--tx:#E8E5DD;--tx2:#A09C92;--tx3:#6B6960;--acc:#EF9F27;--accL:#412402;--grn:#97C459;--grnB:#1E2E0D;--red:#F09595;--redB:#3A1616;--blu:#85B7EB;--bluB:#122540;--pur:#AFA9EC;--purB:#26215C;--teal:#5DCAA5;--tealB:#04342C;--brd:rgba(255,255,255,.08)}
+:root{--bg:#F5F3EE;--sf:#FFF;--sf2:#E4E7EB;--tx:#1A1A18;--tx2:#5A6170;--tx3:#8B909A;--acc:#BA7517;--accL:#FAEEDA;--grn:#4A8C1C;--grnB:#EAF3DE;--red:#C43028;--redB:#FCEBEB;--blu:#2A6CB6;--bluB:#E6F1FB;--pur:#6B5BC0;--purB:#EEEDFE;--teal:#0F6E56;--tealB:#E1F5EE;--brd:rgba(0,0,0,.08);--r:10px;--rl:14px}
+@media(prefers-color-scheme:dark){:root{--bg:#1A1918;--sf:#252422;--sf2:#2E3138;--tx:#E8E5DD;--tx2:#9CA3AF;--tx3:#6B7280;--acc:#EF9F27;--accL:#412402;--grn:#97C459;--grnB:#1E2E0D;--red:#F09595;--redB:#3A1616;--blu:#85B7EB;--bluB:#122540;--pur:#AFA9EC;--purB:#26215C;--teal:#5DCAA5;--tealB:#04342C;--brd:rgba(255,255,255,.08)}
 .gc-hd{background:#3A5568}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
@@ -660,12 +660,12 @@ function renderGameCard(gp){
       var liveAWin=liveWP.away>=50;
       gameContent=liveBoard
         +'<div class="wp-row"><div class="wp-tm '+(liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(liveAWin?'hi':'lo')+'">'+liveWP.away+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.aProb+'%</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!liveAWin?'hi':'lo')+'">'+liveWP.home+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.hProb+'%</div></div></div>'
-        +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#9B9788')+';transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#9B9788')+';transition:width 0.5s ease"></div></div>'
+        +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#8B909A');transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#8B909A');transition:width 0.5s ease"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML;
     } else {
       gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
-        +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
+        +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#8B909A')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#8B909A')+'"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML
         +'<div class="gc-verdict">'+getVerdict(gp)+'</div>';
