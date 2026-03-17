@@ -276,8 +276,12 @@ async function getRecentGameLog(pid) {
 }
 
 // Determine drought tag: "dingerIncoming", "slump", or null
-function calcDroughtTag(gameLog, hrPA, statcast) {
+function calcDroughtTag(gameLog, hrPA, statcast, totHR) {
   if (!gameLog || gameLog.recentGames < 8) return null; // need enough data
+
+  // GATE: You need at least 10 career HRs to even qualify for drought tags.
+  // If you don't regularly hit HRs, you're not in a "drought" — that's just who you are.
+  if (!totHR || totHR < 10) return null;
 
   // Expected games between HRs: 1 / (hrPA * ~4 PA/game)
   var expectedFreq = hrPA > 0 ? 1 / (hrPA * 3.8) : 30;
@@ -289,14 +293,10 @@ function calcDroughtTag(gameLog, hrPA, statcast) {
   // Check Statcast quality — is he still hitting the ball hard?
   var contactStrong = false;
   if (statcast && statcast.barrelPct > 0) {
-    // Barrel rate >= 85% of league avg means contact quality is fine
     contactStrong = statcast.barrelPct >= LG.barrelPct * 0.85;
   } else if (statcast && statcast.exitVelo > 0) {
-    // Fallback: exit velo >= 87 mph means he's still making hard contact
     contactStrong = statcast.exitVelo >= 87;
   } else {
-    // No Statcast data — use recent batting average as proxy
-    // If recent AVG is reasonable (.200+), contact isn't completely dead
     contactStrong = gameLog.recentAVG >= .200;
   }
 
@@ -843,7 +843,7 @@ module.exports = async function handler(req, res) {
         if (sc) statcastCount++;
 
         // Drought tag calculation
-        var droughtTag = calcDroughtTag(r.gameLog, bW.hrPA, sc);
+        var droughtTag = calcDroughtTag(r.gameLog, bW.hrPA, sc, bW.totHR);
 
         var extras = { weather: job.weather, bullpenHR9: job.bullpenHR9, lineupPos: job.lineupPos };
         var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h, r.platoon, sc, extras);
