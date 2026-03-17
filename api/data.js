@@ -366,9 +366,23 @@ function weightBat(seasons) {
   }
   if (wTot === 0) return null;
   var avg = wH / wTot, slg = wSLG / wTot, obp = wOBP / wTot;
-  var tHR = 0, tAB = 0;
-  for (var y in seasons) { tHR += (seasons[y].homeRuns || 0); tAB += (seasons[y].atBats || 0); }
-  return { hrPA: wHR / wTot, avg: avg, slg: slg, obp: obp, iso: slg - avg, kRate: wSO / wTot, babip: Math.max(.25, Math.min(.36, avg + .05)), totHR: tHR, totAB: tAB, yrs: yrs };
+  var tHR = 0, tAB = 0, tPA = 0;
+  for (var y in seasons) {
+    tHR += (seasons[y].homeRuns || 0);
+    tAB += (seasons[y].atBats || 0);
+    tPA += (seasons[y].atBats || 0) + (seasons[y].baseOnBalls || 0) + (seasons[y].hitByPitch || 0) + (seasons[y].sacFlies || 0);
+  }
+
+  // Regress HR rate toward league average based on total PA
+  // Under 200 PA: heavy regression. 200-500 PA: partial. 500+: trust the data.
+  var rawHRPA = wHR / wTot;
+  var regWeight = Math.min(tPA / 500, 1); // 0 to 1 scale, full trust at 500 PA
+  var regressedHRPA = rawHRPA * regWeight + LG.hrPA * (1 - regWeight);
+
+  // Also regress AVG for small samples
+  var regressedAVG = avg * regWeight + LG.avg * (1 - regWeight);
+
+  return { hrPA: regressedHRPA, rawHRPA: rawHRPA, avg: regressedAVG, rawAVG: avg, slg: slg, obp: obp, iso: slg - avg, kRate: wSO / wTot, babip: Math.max(.25, Math.min(.36, avg + .05)), totHR: tHR, totAB: tAB, totPA: tPA, yrs: yrs };
 }
 
 // ========== PREDICTION MODELS (v2 calibrated) ==========
@@ -387,7 +401,7 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   // Fly ball rate factor — pitchers who allow more fly balls = more HR chances
   var fbF = 1;
   if (opp && opp.fbPct > 0) {
-    fbF = Math.max(.85, Math.min(1.20, opp.fbPct / LG.fbPct));
+    fbF = Math.max(.88, Math.min(1.12, opp.fbPct / LG.fbPct));
   }
 
   // H2H factor — works BOTH directions, sample-size adjusted
@@ -461,6 +475,18 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   // Apply H2H AFTER cap — bad matchups can always drag the number down
   gm = gm * h2hF;
   gm = Math.max(.005, gm);
+
+  // Career HR floor check — unproven power hitters get hard capped
+  // You have to earn a high HR% with actual career production
+  if (b.totHR <= 2) {
+    gm = Math.min(gm, .04);         // 2 or fewer career HR: max 4%
+  } else if (b.totHR <= 5) {
+    gm = Math.min(gm, .08);         // 3-5 career HR: max 8%
+  } else if (b.totHR <= 10) {
+    gm = Math.min(gm, .12);         // 6-10 career HR: max 12%
+  } else if (b.totHR <= 15 && b.totPA < 300) {
+    gm = Math.min(gm, .15);         // 11-15 HR on small sample: max 15%
+  }
 
   return {
     pct: (gm * 100).toFixed(1),
