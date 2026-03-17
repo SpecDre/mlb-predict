@@ -478,8 +478,9 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   gm = Math.max(.005, Math.min(gm, cap));
 
   // Apply H2H AFTER cap — bad matchups can always drag the number down
+  // but good matchups can't push past the cap
   gm = gm * h2hF;
-  gm = Math.max(.005, gm);
+  gm = Math.max(.005, Math.min(gm, cap)); // re-apply cap as absolute ceiling
 
   // Career HR floor check — unproven power hitters get hard capped
   // You have to earn a high HR% with actual career production
