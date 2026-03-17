@@ -390,7 +390,7 @@ function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(function(b
 function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(function(b){b.classList.toggle('act',b.dataset.s===s)});render()}
 
 function hrT(p){p=+p;return p>=12?'f':p>=7?'h':p>=4?'o':'c'}
-function hitT(p){p=+p;return p>=85?'f':p>=75?'h':p>=60?'o':'c'}
+function hitT(p){p=+p;return p>=78?'f':p>=72?'h':p>=65?'o':'c'}
 function tCls(t){return'rk-'+t}
 function tCol(t){return t==='f'?'var(--red)':t==='h'?'var(--acc)':t==='o'?'var(--grn)':'var(--tx3)'}
 
@@ -653,7 +653,7 @@ function renderBatter(b,idx,m,isFinal){
     var impliedOdds=pctNum>0?Math.round((100-pctNum)/pctNum*100):9999;
     tierHTML='<span class="tier-label" style="background:var(--sf2);color:var(--tx2)">+'+impliedOdds+'</span>';
   } else {
-    tierHTML=+pct>=80?'<span class="tier-label tier-fire">&#128293; Hot</span>':+pct>=65?'<span class="tier-label tier-warm">Likely</span>':+pct>=50?'<span class="tier-label tier-mild">Toss-up</span>':'<span class="tier-label tier-cold">Unlikely</span>';
+    tierHTML=+pct>=78?'<span class="tier-label tier-fire">&#128293; Hot</span>':+pct>=72?'<span class="tier-label tier-warm">Likely</span>':+pct>=65?'<span class="tier-label tier-mild">Even</span>':+pct>=58?'<span class="tier-label tier-cold">Lean no</span>':'<span class="tier-label tier-cold">Unlikely</span>';
   }
 
   var resultHTML='';
