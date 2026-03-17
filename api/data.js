@@ -15,7 +15,7 @@ const LG = {
   hrPA:.033, hr9:1.25, iso:.150, avg:.248, whip:1.28, h9:8.4, babip:.295,
   era:4.20, rpg:4.6, ops:.720, slg:.400, obp:.320,
   barrelPct:8.5, exitVelo:88.5, xHR:.033,
-  fbPct:35.0, bullpenHR9:1.15
+  fbPct:53.0, bullpenHR9:1.15  // fbPct calibrated to airOuts/(airOuts+groundOuts), not true FB%
 };
 
 // --- Weather factor for HR probability ---
@@ -381,10 +381,19 @@ function weightBat(seasons) {
   var regWeight = Math.min(tPA / 500, 1); // 0 to 1 scale, full trust at 500 PA
   var regressedHRPA = rawHRPA * regWeight + LG.hrPA * (1 - regWeight);
 
-  // Also regress AVG for small samples
+  // Regress AVG, OBP, SLG toward league averages on small samples
   var regressedAVG = avg * regWeight + LG.avg * (1 - regWeight);
+  var regressedOBP = obp * regWeight + LG.obp * (1 - regWeight);
+  var regressedSLG = slg * regWeight + LG.slg * (1 - regWeight);
 
-  return { hrPA: regressedHRPA, rawHRPA: rawHRPA, avg: regressedAVG, rawAVG: avg, slg: slg, obp: obp, iso: slg - avg, kRate: wSO / wTot, babip: Math.max(.25, Math.min(.36, avg + .05)), totHR: tHR, totAB: tAB, totPA: tPA, yrs: yrs };
+  // Enforce mathematical relationships — these can NEVER be violated
+  regressedOBP = Math.max(regressedOBP, regressedAVG);  // OBP >= AVG always
+  regressedSLG = Math.max(regressedSLG, regressedAVG);  // SLG >= AVG always
+
+  // Recalculate ISO from regressed values
+  var regressedISO = regressedSLG - regressedAVG;
+
+  return { hrPA: regressedHRPA, rawHRPA: rawHRPA, avg: regressedAVG, rawAVG: avg, slg: regressedSLG, obp: regressedOBP, iso: regressedISO, kRate: wSO / wTot, babip: Math.max(.25, Math.min(.36, regressedAVG + .05)), totHR: tHR, totAB: tAB, totPA: tPA, yrs: yrs };
 }
 
 // ========== PREDICTION MODELS (v2 calibrated) ==========
