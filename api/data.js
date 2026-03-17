@@ -577,7 +577,11 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
     paPerGame = lpPA[Math.min(extras.lineupPos - 1, 8)] || 3.8;
   }
 
-  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * platF * scF * loF));
+  // Cap the compound multiplier — prevents modest factors from stacking too high
+  var compound = cF * pitF * (pf || 1) * dF * platF * scF * loF;
+  compound = Math.max(.70, Math.min(1.12, compound));
+
+  var pp = Math.max(.10, Math.min(.42, base * compound));
   var gm = 1 - Math.pow(1 - pp, paPerGame);
 
   // Apply H2H after geometric conversion so bad matchups visibly drag the number
