@@ -879,8 +879,23 @@ function render(){
   if(!data){el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';return}
   if(!data.gamePreds||!data.gamePreds.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use arrows to navigate</p></div>';return}
   renderRecordBar();
+  // Save open batter details before re-render
+  var openIds=[];
+  el.querySelectorAll('.bd.open').forEach(function(d){if(d.id)openIds.push(d.id)});
   if(sub_==='lb'){el.innerHTML=renderLB(mode);return}
-  el.innerHTML=data.gamePreds.map(renderGameCard).join('');
+  // Sort: Live games top, upcoming middle, finished bottom
+  var sorted=data.gamePreds.slice().sort(function(a,b){
+    var la=liveScores[a.gamePk]||{};
+    var lb_=liveScores[b.gamePk]||{};
+    var sa=la.status==='Live'?0:la.status==='Final'?2:1;
+    var sb=lb_.status==='Live'?0:lb_.status==='Final'?2:1;
+    if(sa!==sb)return sa-sb;
+    // Within same status, keep original game time order
+    return 0;
+  });
+  el.innerHTML=sorted.map(renderGameCard).join('');
+  // Restore open batter details after re-render
+  openIds.forEach(function(id){var d=document.getElementById(id);if(d)d.classList.add('open')});
 }
 
 async function loadData(){
