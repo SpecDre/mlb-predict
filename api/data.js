@@ -450,13 +450,17 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
     else loF = 0.95;               // 7-9: fewer PAs, less protection
   }
 
-  var pp = Math.max(.003, Math.min(.08, base * isoF * pitF * fbF * (pf || 1) * h2hF * platF * scF * wxF * bpF * loF));
+  var pp = Math.max(.003, Math.min(.08, base * isoF * pitF * fbF * (pf || 1) * platF * scF * wxF * bpF * loF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
 
   // v3 dynamic cap: base 18%, but allow up to 25% when multiple factors align
   var factorBoost = (wxF > 1.03 ? 1 : 0) + (fbF > 1.05 ? 1 : 0) + (scF > 1.15 ? 1 : 0) + ((pf || 1) > 1.05 ? 1 : 0);
   var cap = factorBoost >= 3 ? .25 : factorBoost >= 2 ? .22 : .18;
   gm = Math.max(.005, Math.min(gm, cap));
+
+  // Apply H2H AFTER cap — bad matchups can always drag the number down
+  gm = gm * h2hF;
+  gm = Math.max(.005, gm);
 
   return {
     pct: (gm * 100).toFixed(1),
@@ -515,8 +519,11 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
     else loF = 0.97;               // Bottom third: fewer PAs
   }
 
-  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * h2hF * platF * scF * loF));
+  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * platF * scF * loF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
+
+  // Apply H2H after geometric conversion so bad matchups visibly drag the number
+  gm = Math.max(.05, Math.min(.98, gm * h2hF));
 
   return {
     pct: (gm * 100).toFixed(1),
