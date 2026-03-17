@@ -370,6 +370,7 @@ function tryRecordAccuracy(){
     if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
     var predicted=gp.pred.aProb>=50?gp.away:gp.home;
     var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+    if(actual==='TIE')return; // spring training ties — don't count
     if(predicted===actual)correct++;else wrong++;
   });
   if(correct+wrong>0){
@@ -530,10 +531,12 @@ function renderGameCard(gp){
   } else if(isFinal){
     if(mode==='game'){
       var actualWinner=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
-      var predCorrect=actualWinner===predictedWinner;
+      var isTie=actualWinner==='TIE';
+      var predCorrect=!isTie&&actualWinner===predictedWinner;
       statusHTML='<span class="st-badge st-final">Final</span>'
-        +'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
-        +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>';
+        +(isTie?'<span class="pred-result" style="color:var(--tx3)">TIE</span>'
+        :'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
+        +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>');
     } else {
       statusHTML='<span class="st-badge st-final">Final '+live.awayScore+'-'+live.homeScore+'</span>';
     }
@@ -544,13 +547,25 @@ function renderGameCard(gp){
   var scoreSection='';
   if(isFinal&&mode==='game'){
     var awayWon=live.awayScore>live.homeScore;
-    scoreSection='<div class="final-score">'
-      +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.away+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
-      +'<div class="final-runs '+(awayWon?'winner':'loser')+'">'+live.awayScore+'</div>'
-      +'<div class="final-vs">-</div>'
-      +'<div class="final-runs '+(awayWon?'loser':'winner')+'">'+live.homeScore+'</div>'
-      +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.home+'</span></div>'
-      +'</div>';
+    var homeWon=live.homeScore>live.awayScore;
+    var gameTied=live.awayScore===live.homeScore;
+    if(gameTied){
+      scoreSection='<div class="final-score">'
+        +'<div class="final-tm"><span class="final-abbr">'+gp.away+'</span><span class="final-tag" style="background:var(--tx3);color:#fff">T</span></div>'
+        +'<div class="final-runs">'+live.awayScore+'</div>'
+        +'<div class="final-vs">-</div>'
+        +'<div class="final-runs">'+live.homeScore+'</div>'
+        +'<div class="final-tm"><span class="final-tag" style="background:var(--tx3);color:#fff">T</span><span class="final-abbr">'+gp.home+'</span></div>'
+        +'</div>';
+    } else {
+      scoreSection='<div class="final-score">'
+        +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.away+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
+        +'<div class="final-runs '+(awayWon?'winner':'loser')+'">'+live.awayScore+'</div>'
+        +'<div class="final-vs">-</div>'
+        +'<div class="final-runs '+(awayWon?'loser':'winner')+'">'+live.homeScore+'</div>'
+        +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.home+'</span></div>'
+        +'</div>';
+    }
   }
 
   var liveBoard=renderLinescore(live, gp);
@@ -617,7 +632,7 @@ function renderGameCard(gp){
       gameContent=scoreSection+liveBoard
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML
-        +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore>live.homeScore?gp.away:gp.home)+' wins '+live.awayScore+'-'+live.homeScore+'</div>';
+        +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore===live.homeScore?'TIE ':live.awayScore>live.homeScore?gp.away+' wins ':gp.home+' wins ')+live.awayScore+'-'+live.homeScore+'</div>';
     } else if(isLive){
       gameContent=liveBoard
         +'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Pre-game</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Pre-game</div></div></div>'
@@ -761,6 +776,7 @@ function renderRecordBar(){
       if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
       var predicted=gp.pred.aProb>=50?gp.away:gp.home;
       var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+      if(actual==='TIE')return; // spring training ties — don't count
       if(predicted===actual)correct++;else wrong++;
     });
     var total=correct+wrong;
