@@ -512,27 +512,7 @@ function renderLinescore(live, gp){
     lastPlayHTML='<div class="last-play"><span class="lp-inn">'+live.lastPlay.inning+'</span><b>'+(live.lastPlay.event||'')+'</b> '+live.lastPlay.desc+'</div>';
   }
 
-  var wpShiftHTML='';
-  if(isLive&&gp&&gp.pred){
-    var favIsAway=gp.pred.aProb>=50;
-    var pre=favIsAway?{tm:gp.away,pct:gp.pred.aProb}:{tm:gp.home,pct:gp.pred.hProb};
-    var rd=live.awayScore-live.homeScore;
-    var favRd=favIsAway?rd:-rd;
-    var innProg=Math.min((live.inning||1)/9,1);
-    var scoreAdj=favRd*(.15+innProg*.35);
-    var favLiveP=1/(1+Math.exp(-(Math.log(pre.pct/(100-pre.pct))+scoreAdj)))*100;
-    favLiveP=Math.max(1,Math.min(99,favLiveP));
-    var awayLiveP=favIsAway?favLiveP:100-favLiveP;
-    var homeLiveP=100-awayLiveP;
-    var liveFav=awayLiveP>=50?gp.away:gp.home;
-    var livePct=Math.round(Math.max(awayLiveP,homeLiveP));
-    var shift=livePct-pre.pct;
-    var arrow=shift>3?'&#9650;':shift<-3?'&#9660;':'&#9670;';
-    var arrowCls=shift>3?'up':shift<-3?'down':'';
-    wpShiftHTML='<div class="wp-shift"><span>Pre-game: <b>'+pre.tm+' '+pre.pct+'%</b></span>'
-      +'<span class="wp-shift-arrow '+arrowCls+'">'+arrow+'</span>'
-      +'<span>Live: <b>'+liveFav+' '+livePct+'%</b></span></div>';
-  }
+  // Live WP shift display removed — now handled by calcLiveWP in the main game card
 
   var pcHTML='';
   if((isLive||isFinal)&&(live.awayPitchCount>0||live.homePitchCount>0)){
@@ -548,7 +528,7 @@ function renderLinescore(live, gp){
     spHTML='<div class="sp-section"><div class="sp-toggle" onclick="document.getElementById(\''+spid+'\').classList.toggle(\'open\')">&#9776; Scoring plays ('+live.scoringPlays.length+') &#9662;</div><div class="sp-list" id="'+spid+'">'+items+'</div></div>';
   }
 
-  return boardHTML+matchupHTML+lastPlayHTML+wpShiftHTML+pcHTML+spHTML;
+  return boardHTML+matchupHTML+lastPlayHTML+pcHTML+spHTML;
 }
 
 
