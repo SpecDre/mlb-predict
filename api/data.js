@@ -1,13 +1,22 @@
-// api/data.js — Server-side MLB prediction engine
-// Fetches all data, runs models, returns complete JSON in one call
-// Frontend makes ONE request and renders instantly
+// api/data.js — MLB Predict v2: Enhanced prediction engine
+// Upgrades: Pythagorean wins, platoon splits, Statcast barrel/EV, calibrated model
+// All data fetched server-side, one JSON response to frontend
 
 const MLB = 'https://statsapi.mlb.com/api/v1';
+const SAVANT = 'https://baseballsavant.mlb.com';
 const YR = new Date().getFullYear();
 const HIST = [YR, YR-1, YR-2, YR-3];
-const YR_W = {[YR]:1.0,[YR-1]:.55,[YR-2]:.30,[YR-3]:.15};
-const LG = {hrPA:.033,hr9:1.25,iso:.150,avg:.248,whip:1.28,h9:8.4,babip:.295,era:4.20,rpg:4.6};
+const YR_W = {[YR]:1.0, [YR-1]:.55, [YR-2]:.30, [YR-3]:.15};
+const PYTH_EXP = 1.83; // Pythagorean exponent (Pythagenpat)
 
+// League averages (2024 baseline)
+const LG = {
+  hrPA:.033, hr9:1.25, iso:.150, avg:.248, whip:1.28, h9:8.4, babip:.295,
+  era:4.20, rpg:4.6, ops:.720, slg:.400, obp:.320,
+  barrelPct:8.5, exitVelo:88.5, xHR:.033
+};
+
+// Park factors
 const PF_HR={'Coors Field':1.38,'Great American Ball Park':1.18,'Yankee Stadium':1.15,'Guaranteed Rate Field':1.10,'Globe Life Field':1.08,'Wrigley Field':1.07,'Citizens Bank Park':1.07,'Fenway Park':1.05,'Minute Maid Park':1.04,'Target Field':1.03,'Nationals Park':1.02,'Chase Field':1.02,'Truist Park':1.01,'Busch Stadium':1.00,'American Family Field':1.00,'Rogers Centre':.99,'Angel Stadium':.98,'Comerica Park':.97,'PNC Park':.97,'Progressive Field':.96,'Kauffman Stadium':.95,'Tropicana Field':.95,'loanDepot park':.94,'T-Mobile Park':.93,'Dodger Stadium':.93,'Citi Field':.92,'Oracle Park':.88,'Petco Park':.90,'Oakland Coliseum':.87,'Oriole Park at Camden Yards':1.06};
 const PF_HIT={'Coors Field':1.12,'Fenway Park':1.06,'Globe Life Field':1.04,'Guaranteed Rate Field':1.03,'Wrigley Field':1.03,'Yankee Stadium':1.02,'Chase Field':1.02,'Citizens Bank Park':1.02,'Great American Ball Park':1.02,'Minute Maid Park':1.01,'Target Field':1.01,'Truist Park':1.01,'Rogers Centre':1.01,'Nationals Park':1.00,'Busch Stadium':1.00,'American Family Field':1.00,'PNC Park':1.00,'Angel Stadium':.99,'Oriole Park at Camden Yards':.99,'Comerica Park':.99,'Progressive Field':.99,'Kauffman Stadium':.98,'Tropicana Field':.98,'loanDepot park':.98,'Dodger Stadium':.97,'Citi Field':.97,'T-Mobile Park':.97,'Oracle Park':.96,'Petco Park':.96,'Oakland Coliseum':.95};
 const PF_RUN={'Coors Field':1.25,'Great American Ball Park':1.12,'Yankee Stadium':1.08,'Globe Life Field':1.06,'Guaranteed Rate Field':1.06,'Fenway Park':1.05,'Wrigley Field':1.05,'Citizens Bank Park':1.05,'Chase Field':1.04,'Minute Maid Park':1.03,'Target Field':1.02,'Truist Park':1.01,'Nationals Park':1.01,'Rogers Centre':1.01,'American Family Field':1.00,'Busch Stadium':1.00,'Oriole Park at Camden Yards':1.00,'PNC Park':.99,'Angel Stadium':.98,'Progressive Field':.98,'Comerica Park':.97,'Kauffman Stadium':.97,'Tropicana Field':.96,'loanDepot park':.96,'Dodger Stadium':.96,'Citi Field':.95,'T-Mobile Park':.94,'Oracle Park':.93,'Petco Park':.94,'Oakland Coliseum':.93};
@@ -19,19 +28,108 @@ function gpf(v, t) {
   return 1;
 }
 
+// --- Pythagorean expected win% ---
+function pythagWin(rs, ra) {
+  if (rs <= 0 && ra <= 0) return .5;
+  if (ra <= 0) return .95;
+  var rsE = Math.pow(rs, PYTH_EXP);
+  var raE = Math.pow(ra, PYTH_EXP);
+  return rsE / (rsE + raE);
+}
+
+// Compute RS/RA per game from run differential + league average
+function computeRSRA(rd, gp) {
+  if (gp <= 0) return { rs: LG.rpg, ra: LG.rpg };
+  var rdPG = rd / gp;
+  return { rs: Math.max(1, LG.rpg + rdPG / 2), ra: Math.max(1, LG.rpg - rdPG / 2) };
+}
+
+// --- API helpers ---
 async function fetchJSON(url) {
   try {
-    var r = await fetch(url, { headers: { 'User-Agent': 'MLBPredict/1.0' } });
+    var r = await fetch(url, { headers: { 'User-Agent': 'MLBPredict/2.0' } });
     if (!r.ok) return null;
     return await r.json();
   } catch (e) { return null; }
 }
 
-// Fetch multi-season stats with parallel requests
+async function fetchText(url) {
+  try {
+    var r = await fetch(url, { headers: { 'User-Agent': 'MLBPredict/2.0', 'Accept': 'text/csv,text/plain,*/*' } });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (e) { return null; }
+}
+
+// --- Statcast bulk fetch from Baseball Savant ---
+async function fetchStatcast() {
+  try {
+    var years = [YR, YR - 1];
+    for (var y = 0; y < years.length; y++) {
+      var url = SAVANT + '/leaderboard/expected_statistics?type=batter&year=' + years[y] + '&position=&team=&min=25&csv=true';
+      var csv = await fetchText(url);
+      if (csv && csv.length > 200 && csv.includes('player_id')) {
+        return parseStatcastCSV(csv, years[y]);
+      }
+    }
+    return {};
+  } catch (e) { return {}; }
+}
+
+function parseStatcastCSV(csv, year) {
+  var lines = csv.trim().split('\n');
+  if (lines.length < 2) return {};
+  var headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g, ''); });
+
+  function findCol() {
+    for (var i = 0; i < arguments.length; i++) {
+      var idx = headers.indexOf(arguments[i]);
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  }
+
+  var idIdx = findCol('player_id');
+  var brlIdx = findCol('brl_percent', 'barrel_batted_rate');
+  var evIdx = findCol('exit_velocity_avg', 'avg_hit_speed');
+  var xbaIdx = findCol('est_ba', 'xba');
+  var xslgIdx = findCol('est_slg', 'xslg');
+  var xwobaIdx = findCol('est_woba', 'xwoba');
+
+  if (idIdx < 0) return {};
+
+  var map = {};
+  for (var i = 1; i < lines.length; i++) {
+    var cols = lines[i].split(',').map(function(c) { return c.trim().replace(/"/g, ''); });
+    var pid = parseInt(cols[idIdx]);
+    if (!pid) continue;
+    map[pid] = {
+      barrelPct: brlIdx >= 0 ? parseFloat(cols[brlIdx]) || 0 : 0,
+      exitVelo: evIdx >= 0 ? parseFloat(cols[evIdx]) || 0 : 0,
+      xBA: xbaIdx >= 0 ? parseFloat(cols[xbaIdx]) || 0 : 0,
+      xSLG: xslgIdx >= 0 ? parseFloat(cols[xslgIdx]) || 0 : 0,
+      xwOBA: xwobaIdx >= 0 ? parseFloat(cols[xwobaIdx]) || 0 : 0,
+      year: year
+    };
+  }
+  return map;
+}
+
+// --- Pitcher handedness ---
+async function fetchPitcherHand(pid) {
+  var d = await fetchJSON(MLB + '/people/' + pid);
+  if (d && d.people && d.people[0]) {
+    var p = d.people[0];
+    return p.pitchHand && p.pitchHand.code || 'R';
+  }
+  return 'R';
+}
+
+// --- Multi-season stat fetchers ---
 async function getMultiPitching(pid) {
-  var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=pitching&gameType=R')
-  ));
+  var results = await Promise.all(HIST.map(function(yr) {
+    return fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=pitching&gameType=R');
+  }));
   var seasons = {};
   results.forEach(function(d, i) {
     var s = d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat;
@@ -41,9 +139,9 @@ async function getMultiPitching(pid) {
 }
 
 async function getMultiHitting(pid) {
-  var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=hitting&gameType=R')
-  ));
+  var results = await Promise.all(HIST.map(function(yr) {
+    return fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=hitting&gameType=R');
+  }));
   var seasons = {};
   results.forEach(function(d, i) {
     var s = d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat;
@@ -52,10 +150,43 @@ async function getMultiHitting(pid) {
   return seasons;
 }
 
+// Fetch platoon splits (vs L or vs R) for current + last year
+async function getPlatoonSplits(pid, vsHand) {
+  var sitCode = vsHand === 'L' ? 'vl' : 'vr';
+  var years = [YR, YR - 1];
+  var results = await Promise.all(years.map(function(yr) {
+    return fetchJSON(MLB + '/people/' + pid + '/stats?stats=season&season=' + yr + '&group=hitting&gameType=R&sitCodes=' + sitCode);
+  }));
+  var t = { ab: 0, h: 0, hr: 0, pa: 0, so: 0, doubles: 0, triples: 0 };
+  results.forEach(function(d) {
+    var s = d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat;
+    if (s) {
+      t.ab += (s.atBats || 0);
+      t.h += (s.hits || 0);
+      t.hr += (s.homeRuns || 0);
+      t.so += (s.strikeOuts || 0);
+      t.doubles += (s.doubles || 0);
+      t.triples += (s.triples || 0);
+      t.pa += (s.atBats || 0) + (s.baseOnBalls || 0) + (s.hitByPitch || 0) + (s.sacFlies || 0);
+    }
+  });
+  if (t.pa < 15) return null;
+  var singles = t.h - t.doubles - t.triples - t.hr;
+  var tb = singles + t.doubles * 2 + t.triples * 3 + t.hr * 4;
+  return {
+    avg: t.ab > 0 ? t.h / t.ab : 0,
+    slg: t.ab > 0 ? tb / t.ab : 0,
+    hrPA: t.pa > 0 ? t.hr / t.pa : 0,
+    kRate: t.pa > 0 ? t.so / t.pa : 0,
+    iso: t.ab > 0 ? (tb / t.ab) - (t.h / t.ab) : 0,
+    pa: t.pa, hand: vsHand
+  };
+}
+
 async function getH2H(bid, pid) {
-  var results = await Promise.all(HIST.map(yr =>
-    fetchJSON(MLB + '/people/' + bid + '/stats?stats=vsPlayer&opposingPlayerId=' + pid + '&season=' + yr + '&group=hitting&gameType=R')
-  ));
+  var results = await Promise.all(HIST.map(function(yr) {
+    return fetchJSON(MLB + '/people/' + bid + '/stats?stats=vsPlayer&opposingPlayerId=' + pid + '&season=' + yr + '&group=hitting&gameType=R');
+  }));
   var t = { ab: 0, h: 0, hr: 0, bb: 0, so: 0, pa: 0 };
   results.forEach(function(d) {
     var s = d && d.stats && d.stats[0] && d.stats[0].splits && d.stats[0].splits[0] && d.stats[0].splits[0].stat;
@@ -71,6 +202,7 @@ async function getH2H(bid, pid) {
   return t;
 }
 
+// --- Weighted stat aggregators ---
 function weightPit(seasons) {
   var wE = 0, wW = 0, wHR = 0, wH = 0, wTot = 0;
   var yrs = [];
@@ -118,50 +250,124 @@ function weightBat(seasons) {
   return { hrPA: wHR / wTot, avg: avg, slg: slg, obp: obp, iso: slg - avg, kRate: wSO / wTot, babip: Math.max(.25, Math.min(.36, avg + .05)), totHR: tHR, totAB: tAB, yrs: yrs };
 }
 
-function calcHR(b, opp, pf, h2h) {
+// ========== PREDICTION MODELS (v2 calibrated) ==========
+
+function calcHR(b, opp, pf, h2h, platoon, statcast) {
   var base = b.hrPA;
+
+  // ISO factor — power indicator
   var isoF = b.iso > 0 ? (b.iso / LG.iso) * .3 + .7 : 1;
+
+  // Pitcher factor — HR tendency
   var pitF = 1;
-  if (opp) { pitF = Math.max(.5, Math.min(1.5, opp.hr9 > 0 ? opp.hr9 / LG.hr9 : opp.era / LG.era)); }
+  if (opp) { pitF = Math.max(.55, Math.min(1.45, opp.hr9 > 0 ? opp.hr9 / LG.hr9 : opp.era / LG.era)); }
+
+  // H2H factor
   var h2hF = 1;
-  if (h2h && h2h.pa >= 5 && h2h.hrRate > 0) { h2hF = Math.max(.8, Math.min(1.4, 1 + (h2h.hrRate / LG.hrPA - 1) * .3)); }
-  var pp = Math.max(.005, Math.min(.08, base * isoF * pitF * (pf || 1) * h2hF));
+  if (h2h && h2h.pa >= 5 && h2h.hrRate > 0) {
+    h2hF = Math.max(.85, Math.min(1.35, 1 + (h2h.hrRate / LG.hrPA - 1) * .25));
+  }
+
+  // Platoon factor
+  var platF = 1;
+  if (platoon && platoon.pa >= 20) {
+    var platHRvsOverall = platoon.hrPA / Math.max(b.hrPA, .005);
+    platF = Math.max(.75, Math.min(1.35, platHRvsOverall * .3 + .7));
+  }
+
+  // Statcast factor — barrel rate
+  var scF = 1;
+  if (statcast && statcast.barrelPct > 0) {
+    var brlRatio = statcast.barrelPct / LG.barrelPct;
+    scF = Math.max(.70, Math.min(1.50, brlRatio * .35 + .65));
+  }
+
+  var pp = Math.max(.003, Math.min(.07, base * isoF * pitF * (pf || 1) * h2hF * platF * scF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
-  gm = Math.min(gm, .20);
-  return { pct: (gm * 100).toFixed(1), f: { base: (base * 100).toFixed(2), iso: isoF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), h2h: h2hF.toFixed(2) } };
+  gm = Math.max(.005, Math.min(gm, .18)); // v2 cap: 18%
+
+  return {
+    pct: (gm * 100).toFixed(1),
+    f: { base: (base * 100).toFixed(2), iso: isoF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2) }
+  };
 }
 
-function calcHit(b, opp, pf, h2h) {
+function calcHit(b, opp, pf, h2h, platoon, statcast) {
   var base = b.avg;
   var cF = b.babip > 0 ? (b.babip / LG.babip) * .25 + .75 : 1;
+
   var pitF = 1;
-  if (opp) { if (opp.h9 > 0) pitF = opp.h9 / LG.h9; else if (opp.whip > 0) pitF = opp.whip / LG.whip; }
+  if (opp) { pitF = opp.h9 > 0 ? opp.h9 / LG.h9 : opp.whip > 0 ? opp.whip / LG.whip : 1; }
+
   var dF = 1;
   if (b.obp > 0) { dF = Math.max(.80, Math.min(1.25, (1 + (b.obp - .320) * .5) * (1 + (.22 - b.kRate) * .3))); }
+
   var h2hF = 1;
-  if (h2h && h2h.pa >= 5 && h2h.ab >= 3 && h2h.avg > 0) { h2hF = Math.max(.75, Math.min(1.5, 1 + (h2h.avg / LG.avg - 1) * .35)); }
-  var pp = Math.max(.10, Math.min(.45, base * cF * pitF * (pf || 1) * dF * h2hF));
+  if (h2h && h2h.pa >= 5 && h2h.ab >= 3 && h2h.avg > 0) {
+    h2hF = Math.max(.80, Math.min(1.40, 1 + (h2h.avg / LG.avg - 1) * .30));
+  }
+
+  var platF = 1;
+  if (platoon && platoon.pa >= 20) {
+    var platAvgRatio = platoon.avg / Math.max(b.avg, .100);
+    platF = Math.max(.80, Math.min(1.30, platAvgRatio * .35 + .65));
+  }
+
+  var scF = 1;
+  if (statcast && statcast.xBA > 0 && b.avg > 0) {
+    var xbaRatio = statcast.xBA / Math.max(b.avg, .150);
+    scF = Math.max(.85, Math.min(1.20, xbaRatio * .25 + .75));
+  }
+
+  var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * h2hF * platF * scF));
   var gm = 1 - Math.pow(1 - pp, 3.8);
-  return { pct: (gm * 100).toFixed(1), f: { base: (base * 1000).toFixed(0), contact: cF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), disc: dF.toFixed(2), h2h: h2hF.toFixed(2) } };
+
+  return {
+    pct: (gm * 100).toFixed(1),
+    f: { base: (base * 1000).toFixed(0), contact: cF.toFixed(2), pitcher: pitF.toFixed(2), park: (pf || 1).toFixed(2), disc: dF.toFixed(2), h2h: h2hF.toFixed(2), platoon: platF.toFixed(2), statcast: scF.toFixed(2) }
+  };
 }
 
+// --- Game winner prediction (v2 with Pythagorean) ---
 function calcWin(a, h, aP, hP, venue) {
   var rpf = gpf(venue, 'run');
-  var aW = a.gp >= 30 ? a.wp : a.wp * (a.gp / 40) + .5 * (1 - a.gp / 40);
-  var hW = h.gp >= 30 ? h.wp : h.wp * (h.gp / 40) + .5 * (1 - h.gp / 40);
+
+  // Pythagorean expected win%
+  var aPyth = a.gp >= 20 ? pythagWin(a.rs * a.gp, a.ra * a.gp) : a.gp >= 5 ? pythagWin(a.rs * a.gp, a.ra * a.gp) * (a.gp / 20) + .5 * (1 - a.gp / 20) : .5;
+  var hPyth = h.gp >= 20 ? pythagWin(h.rs * h.gp, h.ra * h.gp) : h.gp >= 5 ? pythagWin(h.rs * h.gp, h.ra * h.gp) * (h.gp / 20) + .5 * (1 - h.gp / 20) : .5;
+
+  // Blend Pythagorean with raw win% early season
+  var aW = a.gp >= 40 ? aPyth : aPyth * .6 + a.wp * .4;
+  var hW = h.gp >= 40 ? hPyth : hPyth * .6 + h.wp * .4;
+
   var aE = aP ? aP.era : LG.era, hE = hP ? hP.era : LG.era;
   var aSF = LG.era / Math.max(aE, 1.5), hSF = LG.era / Math.max(hE, 1.5);
-  var tot = (aW - hW) * .8 + (aSF - hSF) * .25 + (a.ops - h.ops) * .3 + ((a.l10 || .5) - (h.l10 || .5)) * .5 + (a.rdPG - h.rdPG) * .04 - .04;
-  var awP = 1 / (1 + Math.exp(-tot * 4));
+
+  // v2 calibrated logistic model
+  var tot = (aW - hW) * .90           // Pythagorean team strength
+          + (aSF - hSF) * .30         // Starter quality
+          + (a.ops - h.ops) * .25     // Team offense
+          + ((a.l10 || .5) - (h.l10 || .5)) * .40  // Recent form
+          + (a.rdPG - h.rdPG) * .03   // Run differential momentum
+          - .035;                      // Home advantage (~53.5%)
+
+  var awP = 1 / (1 + Math.exp(-tot * 4.2));
+
   var bR = LG.rpg * rpf;
   return {
     aProb: Math.round(awP * 100), hProb: Math.round((1 - awP) * 100),
     aRuns: Math.max(1, Math.round(bR * (a.ops / .72) * hSF * 10) / 10),
     hRuns: Math.max(1, Math.round(bR * (h.ops / .72) * aSF * 10) / 10),
-    det: { aERA: aE.toFixed(2), hERA: hE.toFixed(2) }
+    det: {
+      aERA: aE.toFixed(2), hERA: hE.toFixed(2),
+      aPyth: (aPyth * 100).toFixed(1), hPyth: (hPyth * 100).toFixed(1),
+      aRS: a.rs ? a.rs.toFixed(2) : '-', aRA: a.ra ? a.ra.toFixed(2) : '-',
+      hRS: h.rs ? h.rs.toFixed(2) : '-', hRA: h.ra ? h.ra.toFixed(2) : '-'
+    }
   };
 }
 
+// ===================== MAIN HANDLER =====================
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
@@ -169,21 +375,20 @@ module.exports = async function handler(req, res) {
   var date = req.query.date || new Date().toISOString().slice(0, 10);
 
   try {
-    // Step 1: Schedule + Standings in parallel
-    var [schedData, standData] = await Promise.all([
+    // Step 1: Schedule + Standings + Statcast (parallel)
+    var [schedData, standData, standDataPrev, statcastData] = await Promise.all([
       fetchJSON(MLB + '/schedule?sportId=1&date=' + date + '&hydrate=probablePitcher(note),team,linescore,venue'),
-      fetchJSON(MLB + '/standings?leagueId=103,104&season=' + YR + '&standingsTypes=regularSeason&hydrate=team')
+      fetchJSON(MLB + '/standings?leagueId=103,104&season=' + YR + '&standingsTypes=regularSeason&hydrate=team'),
+      fetchJSON(MLB + '/standings?leagueId=103,104&season=' + (YR - 1) + '&standingsTypes=regularSeason&hydrate=team'),
+      fetchStatcast()
     ]);
-
-    // Also try last year's standings as fallback
-    var standDataPrev = await fetchJSON(MLB + '/standings?leagueId=103,104&season=' + (YR - 1) + '&standingsTypes=regularSeason&hydrate=team');
 
     var games = (schedData && schedData.dates && schedData.dates[0] && schedData.dates[0].games) || [];
     if (games.length === 0) {
-      return res.status(200).json({ date: date, games: [], batters: [], gamePreds: [], noGames: true });
+      return res.status(200).json({ date: date, games: [], batters: [], gamePreds: [], noGames: true, modelVersion: 'v2' });
     }
 
-    // Parse standings
+    // Parse standings with RS/RA for Pythagorean
     var standings = {};
     [standData, standDataPrev].forEach(function(sd) {
       if (!sd || !sd.records) return;
@@ -192,9 +397,23 @@ module.exports = async function handler(req, res) {
           var tid = tr.team && tr.team.id;
           if (!tid || (standings[tid] && standings[tid].yr === YR)) return;
           var l10 = (tr.records && tr.records.splitRecords || []).find(function(s) { return s.type === 'lastTen'; });
+          var gp = (tr.wins || 0) + (tr.losses || 0);
+          var rd = tr.runDifferential || 0;
+
+          // Try direct RS/RA, else estimate from RD
+          var rs, ra;
+          if (tr.runsScored != null && tr.runsAllowed != null && gp > 0) {
+            rs = tr.runsScored / gp;
+            ra = tr.runsAllowed / gp;
+          } else {
+            var est = computeRSRA(rd, gp);
+            rs = est.rs; ra = est.ra;
+          }
+
           standings[tid] = {
             wins: tr.wins || 0, losses: tr.losses || 0, pct: parseFloat(tr.winningPercentage) || .5,
-            rd: tr.runDifferential || 0, gp: (tr.wins || 0) + (tr.losses || 0),
+            rd: rd, gp: gp, rs: rs, ra: ra,
+            pythWin: gp >= 10 ? pythagWin(rs * gp, ra * gp) : .5,
             l10w: l10 && l10.wins, l10l: l10 && l10.losses,
             streak: tr.streak && tr.streak.streakCode || '', yr: sd === standData ? YR : YR - 1
           };
@@ -202,7 +421,7 @@ module.exports = async function handler(req, res) {
       });
     });
 
-    // Step 2: Get unique team IDs and fetch team batting in parallel
+    // Step 2: Team batting stats
     var teamIds = new Set();
     games.forEach(function(g) { teamIds.add(g.teams.away.team.id); teamIds.add(g.teams.home.team.id); });
     var teamBatPromises = [];
@@ -224,7 +443,7 @@ module.exports = async function handler(req, res) {
       }
     });
 
-    // Step 3: Fetch all pitcher stats + boxscores in parallel
+    // Step 3: Pitcher stats + handedness (parallel)
     var pitcherIds = new Set();
     games.forEach(function(g) {
       if (g.teams.away.probablePitcher) pitcherIds.add(g.teams.away.probablePitcher.id);
@@ -232,28 +451,34 @@ module.exports = async function handler(req, res) {
     });
 
     var pitcherPromises = [];
+    var handPromises = [];
     pitcherIds.forEach(function(pid) {
       pitcherPromises.push(getMultiPitching(pid).then(function(s) { return { pid: pid, seasons: s }; }));
+      handPromises.push(fetchPitcherHand(pid).then(function(h) { return { pid: pid, hand: h }; }));
     });
 
     var boxPromises = games.map(function(g) {
       return fetchJSON(MLB + '/game/' + g.gamePk + '/boxscore').then(function(b) { return { pk: g.gamePk, box: b }; });
     });
 
-    var [pitcherResults, boxResults] = await Promise.all([
+    var [pitcherResults, handResults, boxResults] = await Promise.all([
       Promise.all(pitcherPromises),
+      Promise.all(handPromises),
       Promise.all(boxPromises)
     ]);
 
     var pitcherStats = {};
     pitcherResults.forEach(function(r) { pitcherStats[r.pid] = weightPit(r.seasons); });
 
+    var pitcherHands = {};
+    handResults.forEach(function(r) { pitcherHands[r.pid] = r.hand; });
+
     var boxscores = {};
     boxResults.forEach(function(r) { boxscores[r.pk] = r.box; });
 
-    // Step 4: Process each game — compute game predictions + collect batter IDs
+    // Step 4: Process games — predictions + batter collection
     var gamePreds = [];
-    var allBatterJobs = []; // { pid, side, gamePk, oppPitcher, oppPitcherId, team }
+    var allBatterJobs = [];
 
     games.forEach(function(g) {
       var aw = g.teams.away.team, ho = g.teams.home.team;
@@ -262,26 +487,28 @@ module.exports = async function handler(req, res) {
       var hpId = g.teams.home.probablePitcher && g.teams.home.probablePitcher.id;
       var apW = pitcherStats[apId] || null;
       var hpW = pitcherStats[hpId] || null;
-      var aSt = standings[aw.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162 };
-      var hSt = standings[ho.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162 };
+      var aSt = standings[aw.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162, rs: LG.rpg, ra: LG.rpg };
+      var hSt = standings[ho.id] || { wins: 81, losses: 81, pct: .5, rd: 0, gp: 162, rs: LG.rpg, ra: LG.rpg };
 
       var pred = calcWin(
-        { abbr: aw.abbreviation, wp: aSt.pct, ops: (teamBat[aw.id] || { ops: .72 }).ops, l10: aSt.l10w ? aSt.l10w / 10 : .5, rdPG: aSt.gp > 0 ? aSt.rd / aSt.gp : 0, gp: aSt.gp },
-        { abbr: ho.abbreviation, wp: hSt.pct, ops: (teamBat[ho.id] || { ops: .72 }).ops, l10: hSt.l10w ? hSt.l10w / 10 : .5, rdPG: hSt.gp > 0 ? hSt.rd / hSt.gp : 0, gp: hSt.gp },
+        { abbr: aw.abbreviation, wp: aSt.pct, ops: (teamBat[aw.id] || { ops: .72 }).ops, l10: aSt.l10w ? aSt.l10w / 10 : .5, rdPG: aSt.gp > 0 ? aSt.rd / aSt.gp : 0, gp: aSt.gp, rs: aSt.rs || LG.rpg, ra: aSt.ra || LG.rpg },
+        { abbr: ho.abbreviation, wp: hSt.pct, ops: (teamBat[ho.id] || { ops: .72 }).ops, l10: hSt.l10w ? hSt.l10w / 10 : .5, rdPG: hSt.gp > 0 ? hSt.rd / hSt.gp : 0, gp: hSt.gp, rs: hSt.rs || LG.rpg, ra: hSt.ra || LG.rpg },
         apW, hpW, venue
       );
 
-      var gp = {
+      var gObj = {
         gamePk: g.gamePk, away: aw.abbreviation, home: ho.abbreviation,
         awayName: aw.name, homeName: ho.name, venue: venue,
         gameDate: g.gameDate, status: g.status && g.status.abstractGameState,
         awaySP: g.teams.away.probablePitcher && g.teams.away.probablePitcher.fullName || 'TBD',
         homeSP: g.teams.home.probablePitcher && g.teams.home.probablePitcher.fullName || 'TBD',
+        awaySPHand: pitcherHands[apId] || '?',
+        homeSPHand: pitcherHands[hpId] || '?',
         aRec: aSt.wins + '-' + aSt.losses, hRec: hSt.wins + '-' + hSt.losses,
         aPitYrs: apW ? apW.yrs : [], hPitYrs: hpW ? hpW.yrs : [],
         pred: pred
       };
-      gamePreds.push(gp);
+      gamePreds.push(gObj);
 
       // Collect batters from boxscore
       var box = boxscores[g.gamePk];
@@ -294,14 +521,16 @@ module.exports = async function handler(req, res) {
           order.forEach(function(pid) {
             var p = players['ID' + pid];
             if (!p) return;
+            var oppPitcherId = side === 'away' ? hpId : apId;
             allBatterJobs.push({
               pid: pid, side: side, gamePk: g.gamePk,
               name: p.person && p.person.fullName || 'Unknown',
               pos: p.position && p.position.abbreviation || '',
               team: side === 'away' ? aw.abbreviation : ho.abbreviation,
               oppPW: side === 'away' ? hpW : apW,
-              oppPId: side === 'away' ? hpId : apId,
-              oppPName: side === 'away' ? gp.homeSP : gp.awaySP,
+              oppPId: oppPitcherId,
+              oppPName: side === 'away' ? gObj.homeSP : gObj.awaySP,
+              oppPHand: pitcherHands[oppPitcherId] || 'R',
               venue: venue,
               gameStats: p.stats && p.stats.batting ? {
                 ab: p.stats.batting.atBats || 0,
@@ -317,18 +546,20 @@ module.exports = async function handler(req, res) {
       }
     });
 
-    // Step 5: Fetch all batter stats in parallel (batched)
-    var BATCH = 10;
+    // Step 5: Fetch batter stats + platoon splits (batched)
+    var BATCH = 8;
     var allBatters = [];
+    var statcastCount = 0;
 
     for (var i = 0; i < allBatterJobs.length; i += BATCH) {
       var batch = allBatterJobs.slice(i, i + BATCH);
       var batchResults = await Promise.all(batch.map(function(job) {
         return Promise.all([
           getMultiHitting(job.pid),
-          job.oppPId ? getH2H(job.pid, job.oppPId) : Promise.resolve(null)
+          job.oppPId ? getH2H(job.pid, job.oppPId) : Promise.resolve(null),
+          getPlatoonSplits(job.pid, job.oppPHand)
         ]).then(function(results) {
-          return { job: job, seasons: results[0], h2h: results[1] };
+          return { job: job, seasons: results[0], h2h: results[1], platoon: results[2] };
         });
       }));
 
@@ -338,8 +569,11 @@ module.exports = async function handler(req, res) {
         var job = r.job;
         var pfHR = gpf(job.venue, 'hr');
         var pfHit = gpf(job.venue, 'hit');
-        var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h);
-        var hitR = calcHit(bW, job.oppPW, pfHit, r.h2h);
+        var sc = statcastData[job.pid] || null;
+        if (sc) statcastCount++;
+
+        var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h, r.platoon, sc);
+        var hitR = calcHit(bW, job.oppPW, pfHit, r.h2h, r.platoon, sc);
 
         allBatters.push({
           id: job.pid, name: job.name, team: job.team, side: job.side,
@@ -349,6 +583,9 @@ module.exports = async function handler(req, res) {
           hrPct: hrR.pct, hrF: hrR.f,
           hitPct: hitR.pct, hitF: hitR.f,
           h2h: r.h2h, oppP: job.oppPName,
+          oppPHand: job.oppPHand,
+          platoon: r.platoon ? { avg: r.platoon.avg.toFixed(3), hrPA: (r.platoon.hrPA * 100).toFixed(2), pa: r.platoon.pa, hand: r.platoon.hand } : null,
+          statcast: sc ? { barrelPct: sc.barrelPct, exitVelo: sc.exitVelo, xBA: sc.xBA, xSLG: sc.xSLG } : null,
           gs: job.gameStats
         });
       });
@@ -356,6 +593,14 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       date: date,
+      modelVersion: 'v2',
+      modelInfo: {
+        pythagorean: true,
+        platoonSplits: true,
+        statcast: statcastCount > 0,
+        statcastCount: statcastCount,
+        calibrated: true
+      },
       games: games.map(function(g) {
         return {
           gamePk: g.gamePk, gameDate: g.gameDate,
