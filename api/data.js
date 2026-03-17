@@ -405,8 +405,8 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   var base = b.hrPA;
   extras = extras || {};
 
-  // ISO factor — power indicator
-  var isoF = b.iso > 0 ? (b.iso / LG.iso) * .3 + .7 : 1;
+  // ISO factor — small refinement only, base rate already captures most power signal
+  var isoF = b.iso > 0 ? (b.iso / LG.iso) * .10 + .90 : 1;
 
   // Pitcher factor — HR tendency
   var pitF = 1;
