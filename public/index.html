@@ -240,6 +240,12 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .lo-badge{display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;width:14px;height:14px;border-radius:3px;margin-left:3px;vertical-align:middle;background:var(--sf2);color:var(--tx3)}
 .lo-top{background:var(--accL);color:var(--acc)}
 
+/* Drought tags */
+.drought-tag{display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.tag-dinger{background:#FFF3E0;color:#E65100;border:1px solid #FFB74D}
+@media(prefers-color-scheme:dark){.tag-dinger{background:#3E2700;color:#FFB74D;border-color:#6D4C00}}
+.tag-slump{background:var(--sf2);color:var(--tx3);border:1px solid var(--brd)}
+
 /* Model version badge */
 .model-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--accL);color:var(--acc);cursor:default}
 .model-info{display:none;position:absolute;top:100%;right:0;background:var(--sf);border:1px solid var(--brd);border-radius:8px;padding:10px;font-size:11px;color:var(--tx2);width:220px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:10}
@@ -710,9 +716,19 @@ function renderBatter(b,idx,m,isFinal){
   // Lineup position badge
   var loBadge=b.lineupPos?'<span class="lo-badge'+(b.lineupPos<=4?' lo-top':'')+'">'+b.lineupPos+'</span>':'';
 
+  // Drought tag (DINGER INCOMING or SLUMP)
+  var droughtHTML='';
+  if(b.droughtTag){
+    if(b.droughtTag.tag==='dingerIncoming'){
+      droughtHTML='<span class="drought-tag tag-dinger">&#128165; DINGER INCOMING</span>';
+    } else if(b.droughtTag.tag==='slump'){
+      droughtHTML='<span class="drought-tag tag-slump">SLUMP</span>';
+    }
+  }
+
   return '<div class="br" onclick="document.getElementById(\''+did+'\').classList.toggle(\'open\')">'
     +'<div class="brk '+tCls(t)+'">'+(idx+1)+'</div>'
-    +'<div class="bi"><div class="bn">'+b.name+loBadge+'</div>'+resultHTML+'</div>'
+    +'<div class="bi"><div class="bn">'+b.name+loBadge+droughtHTML+'</div>'+resultHTML+'</div>'
     +'<div class="bp"><div class="bpc t'+t+'">'+pct+'%</div>'+tierHTML+'</div>'
     +'</div>'
     +'<div class="bd" id="'+did+'"><div class="dg">'
@@ -720,7 +736,9 @@ function renderBatter(b,idx,m,isFinal){
     +'<div class="di"><div class="dl">ISO</div><div class="dv">.'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+'</div></div>'
     +'<div class="di"><div class="dl">OBP</div><div class="dv">.'+String(Math.round((b.obp||0)*1000)).padStart(3,'0')+'</div></div>'
     +'<div class="di"><div class="dl">3yr HR</div><div class="dv">'+(b.totHR||0)+'</div></div>'
-    +'</div>'+h2hH+platH+scH+factorHTML+'</div>';
+    +'</div>'+h2hH+platH+scH
+    +(b.droughtTag?'<div style="margin-top:6px;padding:6px 8px;border-radius:6px;font-size:11px;border-left:3px solid '+(b.droughtTag.tag==='dingerIncoming'?'#E65100':'var(--tx3)')+';background:'+(b.droughtTag.tag==='dingerIncoming'?'#FFF3E0':'var(--sf2)')+';color:'+(b.droughtTag.tag==='dingerIncoming'?'#E65100':'var(--tx3)')+'"><strong>'+b.droughtTag.drought+' games without HR</strong> &middot; Expected every '+b.droughtTag.expected+' games &middot; '+b.droughtTag.ratio+'x overdue</div>':'')
+    +factorHTML+'</div>';
 }
 
 function getVerdict(gp){
@@ -813,7 +831,13 @@ function renderLB(m){
       sub+=' &middot; .'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+' AVG';
       if(b.statcast&&b.statcast.xBA>0)sub+=' &middot; .'+String(Math.round(b.statcast.xBA*1000)).padStart(3,'0')+' xBA';
     }
-    h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+' '+resHTML+'</div><div class="lbsu">'+sub+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>';
+    // Drought tag for leaderboard
+    var lbDrought='';
+    if(b.droughtTag){
+      if(b.droughtTag.tag==='dingerIncoming') lbDrought=' <span class="drought-tag tag-dinger">&#128165; DINGER INCOMING</span>';
+      else if(b.droughtTag.tag==='slump') lbDrought=' <span class="drought-tag tag-slump">SLUMP</span>';
+    }
+    h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+' '+resHTML+lbDrought+'</div><div class="lbsu">'+sub+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>';
   });
   return h+'</div>';
 }
@@ -828,7 +852,7 @@ function updateModelBadge(){
     el.className='mi-off';el.textContent='unavailable';
   }
   var badge=document.getElementById('modelBadge');
-  badge.textContent=data.modelVersion||'v2';
+  badge.textContent=data.modelVersion||'v3';
 }
 
 function render(){
