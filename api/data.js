@@ -585,8 +585,10 @@ function calcWin(a, h, aP, hP, venue) {
   var bR = LG.rpg * rpf;
   return {
     aProb: Math.round(awP * 100), hProb: Math.round((1 - awP) * 100),
-    aRuns: Math.max(1, Math.round(bR * (a.ops / .72) * hSF * 10) / 10),
-    hRuns: Math.max(1, Math.round(bR * (h.ops / .72) * aSF * 10) / 10),
+    // Away team's runs: their offense vs HOME pitcher. Good home pitcher (high hSF) = fewer away runs.
+    aRuns: Math.max(1, Math.round(bR * (a.ops / .72) / hSF * 10) / 10),
+    // Home team's runs: their offense vs AWAY pitcher. Good away pitcher (high aSF) = fewer home runs.
+    hRuns: Math.max(1, Math.round(bR * (h.ops / .72) / aSF * 10) / 10),
     det: {
       aERA: aE.toFixed(2), hERA: hE.toFixed(2),
       aPyth: (aPyth * 100).toFixed(1), hPyth: (hPyth * 100).toFixed(1),
