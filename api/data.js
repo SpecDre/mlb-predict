@@ -390,10 +390,13 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
     fbF = Math.max(.85, Math.min(1.20, opp.fbPct / LG.fbPct));
   }
 
-  // H2H factor
+  // H2H factor — sample-size adjusted
   var h2hF = 1;
-  if (h2h && h2h.pa >= 5 && h2h.hrRate > 0) {
-    h2hF = Math.max(.85, Math.min(1.35, 1 + (h2h.hrRate / LG.hrPA - 1) * .25));
+  if (h2h && h2h.pa >= 10 && h2h.hrRate > 0) {
+    // Scale confidence by sample: full weight at 40+ PA, partial below
+    var sampleW = Math.min(h2h.pa / 40, 1);
+    var rawH2H = 1 + (h2h.hrRate / LG.hrPA - 1) * .20;
+    h2hF = 1 + (Math.max(.85, Math.min(1.25, rawH2H)) - 1) * sampleW;
   }
 
   // Platoon factor
@@ -458,8 +461,11 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
   if (b.obp > 0) { dF = Math.max(.80, Math.min(1.25, (1 + (b.obp - .320) * .5) * (1 + (.22 - b.kRate) * .3))); }
 
   var h2hF = 1;
-  if (h2h && h2h.pa >= 5 && h2h.ab >= 3 && h2h.avg > 0) {
-    h2hF = Math.max(.80, Math.min(1.40, 1 + (h2h.avg / LG.avg - 1) * .30));
+  if (h2h && h2h.pa >= 10 && h2h.ab >= 5 && h2h.avg > 0) {
+    // Scale confidence by sample: full weight at 40+ PA, partial below
+    var sampleW = Math.min(h2h.pa / 40, 1);
+    var rawH2H = 1 + (h2h.avg / LG.avg - 1) * .20;
+    h2hF = 1 + (Math.max(.85, Math.min(1.25, rawH2H)) - 1) * sampleW;
   }
 
   var platF = 1;
