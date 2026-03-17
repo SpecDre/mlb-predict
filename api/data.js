@@ -227,6 +227,98 @@ async function getH2H(bid, pid) {
   return t;
 }
 
+// --- HR Drought detection via recent game logs ---
+async function getRecentGameLog(pid) {
+  // Fetch current season game log; fall back to last year if no data yet
+  var d = await fetchJSON(MLB + '/people/' + pid + '/stats?stats=gameLog&season=' + YR + '&group=hitting&gameType=R');
+  var splits = d && d.stats && d.stats[0] && d.stats[0].splits;
+  if (!splits || splits.length < 5) {
+    // Try last year if current season hasn't started or too few games
+    d = await fetchJSON(MLB + '/people/' + pid + '/stats?stats=gameLog&season=' + (YR - 1) + '&group=hitting&gameType=R');
+    splits = d && d.stats && d.stats[0] && d.stats[0].splits;
+  }
+  if (!splits || splits.length === 0) return null;
+
+  // Get last 20 games (most recent first)
+  var recent = splits.slice(-20).reverse();
+  var gamesSinceHR = 0;
+  var foundHR = false;
+  var recentAB = 0, recentH = 0, recentHR = 0, recentPA = 0;
+
+  for (var i = 0; i < recent.length; i++) {
+    var s = recent[i].stat;
+    if (!s) continue;
+    recentAB += (s.atBats || 0);
+    recentH += (s.hits || 0);
+    recentHR += (s.homeRuns || 0);
+    recentPA += (s.atBats || 0) + (s.baseOnBalls || 0) + (s.hitByPitch || 0) + (s.sacFlies || 0);
+    if (!foundHR) {
+      if ((s.homeRuns || 0) > 0) {
+        foundHR = true;
+      } else {
+        gamesSinceHR++;
+      }
+    }
+  }
+
+  // If no HR found in last 20 games, drought = 20+
+  if (!foundHR) gamesSinceHR = recent.length;
+
+  return {
+    gamesSinceHR: gamesSinceHR,
+    recentGames: recent.length,
+    recentAB: recentAB,
+    recentH: recentH,
+    recentHR: recentHR,
+    recentPA: recentPA,
+    recentAVG: recentAB > 0 ? recentH / recentAB : 0
+  };
+}
+
+// Determine drought tag: "dingerIncoming", "slump", or null
+function calcDroughtTag(gameLog, hrPA, statcast) {
+  if (!gameLog || gameLog.recentGames < 8) return null; // need enough data
+
+  // Expected games between HRs: 1 / (hrPA * ~4 PA/game)
+  var expectedFreq = hrPA > 0 ? 1 / (hrPA * 3.8) : 30;
+  var drought = gameLog.gamesSinceHR;
+
+  // Only flag if drought is 2x+ the expected frequency AND at least 5 games
+  if (drought < 5 || drought < expectedFreq * 1.8) return null;
+
+  // Check Statcast quality — is he still hitting the ball hard?
+  var contactStrong = false;
+  if (statcast && statcast.barrelPct > 0) {
+    // Barrel rate >= 85% of league avg means contact quality is fine
+    contactStrong = statcast.barrelPct >= LG.barrelPct * 0.85;
+  } else if (statcast && statcast.exitVelo > 0) {
+    // Fallback: exit velo >= 87 mph means he's still making hard contact
+    contactStrong = statcast.exitVelo >= 87;
+  } else {
+    // No Statcast data — use recent batting average as proxy
+    // If recent AVG is reasonable (.200+), contact isn't completely dead
+    contactStrong = gameLog.recentAVG >= .200;
+  }
+
+  var droughtRatio = drought / Math.max(expectedFreq, 1);
+
+  if (contactStrong) {
+    return {
+      tag: 'dingerIncoming',
+      drought: drought,
+      expected: +expectedFreq.toFixed(1),
+      ratio: +droughtRatio.toFixed(1)
+    };
+  } else {
+    return {
+      tag: 'slump',
+      drought: drought,
+      expected: +expectedFreq.toFixed(1),
+      ratio: +droughtRatio.toFixed(1)
+    };
+  }
+}
+
 // --- Weighted stat aggregators ---
 function weightPit(seasons) {
   var wE = 0, wW = 0, wHR = 0, wH = 0, wFB = 0, wTot = 0;
@@ -669,9 +761,10 @@ module.exports = async function handler(req, res) {
         return Promise.all([
           getMultiHitting(job.pid),
           job.oppPId ? getH2H(job.pid, job.oppPId) : Promise.resolve(null),
-          getPlatoonSplits(job.pid, job.oppPHand)
+          getPlatoonSplits(job.pid, job.oppPHand),
+          getRecentGameLog(job.pid)
         ]).then(function(results) {
-          return { job: job, seasons: results[0], h2h: results[1], platoon: results[2] };
+          return { job: job, seasons: results[0], h2h: results[1], platoon: results[2], gameLog: results[3] };
         });
       }));
 
@@ -683,6 +776,9 @@ module.exports = async function handler(req, res) {
         var pfHit = gpf(job.venue, 'hit');
         var sc = statcastData[job.pid] || null;
         if (sc) statcastCount++;
+
+        // Drought tag calculation
+        var droughtTag = calcDroughtTag(r.gameLog, bW.hrPA, sc);
 
         var extras = { weather: job.weather, bullpenHR9: job.bullpenHR9, lineupPos: job.lineupPos };
         var hrR = calcHR(bW, job.oppPW, pfHR, r.h2h, r.platoon, sc, extras);
@@ -700,6 +796,7 @@ module.exports = async function handler(req, res) {
           lineupPos: job.lineupPos,
           platoon: r.platoon ? { avg: r.platoon.avg.toFixed(3), hrPA: (r.platoon.hrPA * 100).toFixed(2), pa: r.platoon.pa, hand: r.platoon.hand } : null,
           statcast: sc ? { barrelPct: sc.barrelPct, exitVelo: sc.exitVelo, xBA: sc.xBA, xSLG: sc.xSLG } : null,
+          droughtTag: droughtTag,
           gs: job.gameStats
         });
       });
