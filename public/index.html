@@ -397,6 +397,45 @@ function tCol(t){return t==='f'?'var(--red)':t==='h'?'var(--acc)':t==='o'?'var(-
 
 function getLiveData(gamePk){return liveScores[gamePk]||null}
 
+// Live win probability based on score, inning, outs
+function calcLiveWP(preAwayProb, awayScore, homeScore, inning, isTopInning, outs) {
+  if (!inning || inning < 1) return { away: preAwayProb, home: 100 - preAwayProb };
+  
+  // Innings remaining (fractional based on half-inning and outs)
+  var halfInningsLeft = (9 - inning) * 2;
+  if (isTopInning) halfInningsLeft += 1; // haven't finished this half yet
+  halfInningsLeft += (3 - (outs || 0)) / 3; // partial outs in current half-inning
+  halfInningsLeft = Math.max(halfInningsLeft, 0.1);
+  var inningsLeft = halfInningsLeft / 2;
+  
+  // Run differential from away team perspective (positive = away leading)
+  var runDiff = awayScore - homeScore;
+  
+  // Score-based win probability using sigmoid scaled by innings remaining
+  // More innings left = less certain, fewer innings = more decisive
+  var k = 1.4; // calibration constant
+  var z = runDiff * k / Math.sqrt(Math.max(inningsLeft, 0.3));
+  var scoreWP = 1 / (1 + Math.exp(-z)); // away team win prob from score alone
+  
+  // Home team advantage when tied or close (they bat last)
+  if (Math.abs(runDiff) <= 1 && !isTopInning) scoreWP -= 0.03;
+  
+  // Blend: early innings lean on pre-game, late innings lean on score
+  var leverage = Math.min(1, 1 - (inningsLeft / 9));
+  leverage = Math.max(0.15, leverage); // even in 1st inning, score matters a little
+  
+  var preAway = preAwayProb / 100;
+  var liveAway = scoreWP * leverage + preAway * (1 - leverage);
+  
+  // Clamp
+  liveAway = Math.max(0.02, Math.min(0.98, liveAway));
+  
+  return {
+    away: Math.round(liveAway * 100),
+    home: Math.round((1 - liveAway) * 100)
+  };
+}
+
 function handBadge(h){
   if(!h||h==='?')return'';
   return '<span class="hand-badge hand-'+h+'">'+h+'</span>';
@@ -634,9 +673,11 @@ function renderGameCard(gp){
         +pythHTML+wxHTML
         +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore===live.homeScore?'TIE ':live.awayScore>live.homeScore?gp.away+' wins ':gp.home+' wins ')+live.awayScore+'-'+live.homeScore+'</div>';
     } else if(isLive){
+      var liveWP=calcLiveWP(p.aProb, live.awayScore, live.homeScore, live.inning, live.isTopInning, live.outs);
+      var liveAWin=liveWP.away>=50;
       gameContent=liveBoard
-        +'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Pre-game</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Pre-game</div></div></div>'
-        +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
+        +'<div class="wp-row"><div class="wp-tm '+(liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(liveAWin?'hi':'lo')+'">'+liveWP.away+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.aProb+'%</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!liveAWin?'hi':'lo')+'">'+liveWP.home+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.hProb+'%</div></div></div>'
+        +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#9B9788')+';transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#9B9788')+';transition:width 0.5s ease"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML;
     } else {
