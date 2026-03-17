@@ -227,6 +227,19 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 /* Statcast detail */
 .sc-b{margin-top:6px;padding:6px 8px;border-radius:6px;font-size:11px;border-left:3px solid var(--blu);background:var(--bluB);color:var(--blu)}
 
+/* Weather badge */
+.wx-row{display:flex;align-items:center;gap:6px;padding:4px 16px;font-size:10px;color:var(--tx3);border-top:1px solid var(--brd)}
+.wx-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px}
+.wx-hot{background:var(--redB);color:var(--red)}
+.wx-cold{background:var(--bluB);color:var(--blu)}
+.wx-neutral{background:var(--sf2);color:var(--tx3)}
+.wx-wind-out{background:var(--grnB);color:var(--grn)}
+.wx-wind-in{background:var(--purB);color:var(--pur)}
+
+/* Lineup position badge */
+.lo-badge{display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;width:14px;height:14px;border-radius:3px;margin-left:3px;vertical-align:middle;background:var(--sf2);color:var(--tx3)}
+.lo-top{background:var(--accL);color:var(--acc)}
+
 /* Model version badge */
 .model-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--accL);color:var(--acc);cursor:default}
 .model-info{display:none;position:absolute;top:100%;right:0;background:var(--sf);border:1px solid var(--brd);border-radius:8px;padding:10px;font-size:11px;color:var(--tx2);width:220px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:10}
@@ -259,18 +272,22 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div id="liveInd" style="display:none"><span class="live-dot"></span> <span style="font-size:12px;color:var(--red);font-weight:600">LIVE</span></div>
-        <div class="model-wrap"><span class="model-badge" id="modelBadge">v2</span>
+        <div class="model-wrap"><span class="model-badge" id="modelBadge">v3</span>
           <div class="model-info" id="modelInfo">
-            <div style="font-weight:700;margin-bottom:4px;color:var(--tx)">Model v2</div>
+            <div style="font-weight:700;margin-bottom:4px;color:var(--tx)">Model v3</div>
             <div class="mi-row"><span>Pythagorean W%</span><span class="mi-on" id="mi-pyth">&#10003;</span></div>
             <div class="mi-row"><span>Platoon splits</span><span class="mi-on" id="mi-plat">&#10003;</span></div>
             <div class="mi-row"><span>Statcast</span><span id="mi-sc">-</span></div>
+            <div class="mi-row"><span>Weather</span><span class="mi-on" id="mi-wx">&#10003;</span></div>
+            <div class="mi-row"><span>Fly ball rate</span><span class="mi-on" id="mi-fb">&#10003;</span></div>
+            <div class="mi-row"><span>Bullpen HR/9</span><span class="mi-on" id="mi-bp">&#10003;</span></div>
+            <div class="mi-row"><span>Lineup position</span><span class="mi-on" id="mi-lo">&#10003;</span></div>
             <div class="mi-row"><span>Calibrated</span><span class="mi-on" id="mi-cal">&#10003;</span></div>
           </div>
         </div>
       </div>
     </div>
-    <p class="sub-h">Game picks, HR &amp; hit probabilities — Pythagorean + platoon + Statcast engine</p>
+    <p class="sub-h">Game picks, HR &amp; hit probabilities — Pythagorean + platoon + Statcast + weather engine</p>
   </div>
   <div class="date-nav">
     <button class="date-btn" onclick="changeDate(-1)">&#8249;</button>
@@ -564,7 +581,25 @@ function renderGameCard(gp){
       +'</div>';
   }
 
-  // SP info with hand badges
+  // Weather row (game mode)
+  var wxHTML='';
+  if(mode==='game'&&gp.weather&&gp.weather.temp){
+    var wx=gp.weather;
+    var t=parseInt(wx.temp)||72;
+    var tCls=t>=80?'wx-hot':t<=60?'wx-cold':'wx-neutral';
+    var wf=wx.factor?wx.factor.combined:1;
+    var wfLabel=wf>1.03?'HR+':wf<0.97?'HR-':'';
+    wxHTML='<div class="wx-row">'
+      +'<span class="wx-badge '+tCls+'">'+wx.temp+'&deg;F</span>'
+      +(wx.wind?'<span>'+wx.wind+'</span>':'')
+      +(wx.condition?'<span>'+wx.condition+'</span>':'')
+      +(wfLabel?'<span class="wx-badge '+(wf>1?'wx-wind-out':'wx-wind-in')+'">'+wfLabel+' &times;'+wf.toFixed(2)+'</span>':'')
+      +'</div>';
+  }
+
+  // SP info with hand badges + fly ball rate
+  var aFB=gp.awaySPFB?' <span style="font-size:9px;color:var(--tx3)">('+gp.awaySPFB+'% FB)</span>':'';
+  var hFB=gp.homeSPFB?' <span style="font-size:9px;color:var(--tx3)">('+gp.homeSPFB+'% FB)</span>':'';
   var aSPDisplay=gp.awaySP+handBadge(gp.awaySPHand);
   var hSPDisplay=gp.homeSP+handBadge(gp.homeSPHand);
 
@@ -574,20 +609,20 @@ function renderGameCard(gp){
   } else if(mode==='game'){
     if(isFinal){
       gameContent=scoreSection+liveBoard
-        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
-        +pythHTML
+        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
+        +pythHTML+wxHTML
         +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore>live.homeScore?gp.away:gp.home)+' wins '+live.awayScore+'-'+live.homeScore+'</div>';
     } else if(isLive){
       gameContent=liveBoard
         +'<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Pre-game</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Pre-game</div></div></div>'
         +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
-        +pythHTML;
+        +pythHTML+wxHTML;
     } else {
       gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
         +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#9B9788')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#9B9788')+'"></div></div>'
-        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA) <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
-        +pythHTML
+        +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
+        +pythHTML+wxHTML
         +'<div class="gc-verdict">'+getVerdict(gp)+'</div>';
     }
   } else {
@@ -649,26 +684,35 @@ function renderBatter(b,idx,m,isFinal){
       +'</div>';
   }
 
-  // Factor row in detail — show new factors
+  // Factor row in detail — show all factors including v3
   var fKey=m==='hr'?'hrF':'hitF';
   var f=b[fKey]||{};
   var factorHTML='<div style="margin-top:6px;font-size:10px;color:var(--tx3)">Factors: ';
   if(m==='hr'){
-    factorHTML+='Base '+(f.base||'-')+'% &middot; ISO &times;'+(f.iso||'-')+' &middot; Pit &times;'+(f.pitcher||'-')+' &middot; Park &times;'+(f.park||'-');
-    if(f.platoon&&f.platoon!=='1.00')factorHTML+=' &middot; Platoon &times;'+f.platoon;
-    if(f.statcast&&f.statcast!=='1.00')factorHTML+=' &middot; Statcast &times;'+f.statcast;
+    factorHTML+='Base '+(f.base||'-')+'% &middot; ISO &times;'+(f.iso||'-')+' &middot; Pit &times;'+(f.pitcher||'-');
+    if(f.flyball&&f.flyball!=='1.00')factorHTML+=' &middot; FB &times;'+f.flyball;
+    factorHTML+=' &middot; Park &times;'+(f.park||'-');
+    if(f.platoon&&f.platoon!=='1.00')factorHTML+=' &middot; Plat &times;'+f.platoon;
+    if(f.statcast&&f.statcast!=='1.00')factorHTML+=' &middot; SC &times;'+f.statcast;
+    if(f.weather&&f.weather!=='1.00')factorHTML+=' &middot; Wx &times;'+f.weather;
+    if(f.bullpen&&f.bullpen!=='1.00')factorHTML+=' &middot; BP &times;'+f.bullpen;
+    if(f.lineup&&f.lineup!=='1.00')factorHTML+=' &middot; LO &times;'+f.lineup;
     if(f.h2h&&f.h2h!=='1.00')factorHTML+=' &middot; H2H &times;'+f.h2h;
   } else {
     factorHTML+='Base .'+(f.base||'-')+' &middot; Contact &times;'+(f.contact||'-')+' &middot; Pit &times;'+(f.pitcher||'-')+' &middot; Disc &times;'+(f.disc||'-');
-    if(f.platoon&&f.platoon!=='1.00')factorHTML+=' &middot; Platoon &times;'+f.platoon;
-    if(f.statcast&&f.statcast!=='1.00')factorHTML+=' &middot; Statcast &times;'+f.statcast;
+    if(f.platoon&&f.platoon!=='1.00')factorHTML+=' &middot; Plat &times;'+f.platoon;
+    if(f.statcast&&f.statcast!=='1.00')factorHTML+=' &middot; SC &times;'+f.statcast;
+    if(f.lineup&&f.lineup!=='1.00')factorHTML+=' &middot; LO &times;'+f.lineup;
     if(f.h2h&&f.h2h!=='1.00')factorHTML+=' &middot; H2H &times;'+f.h2h;
   }
   factorHTML+='</div>';
 
+  // Lineup position badge
+  var loBadge=b.lineupPos?'<span class="lo-badge'+(b.lineupPos<=4?' lo-top':'')+'">'+b.lineupPos+'</span>':'';
+
   return '<div class="br" onclick="document.getElementById(\''+did+'\').classList.toggle(\'open\')">'
     +'<div class="brk '+tCls(t)+'">'+(idx+1)+'</div>'
-    +'<div class="bi"><div class="bn">'+b.name+'</div>'+resultHTML+'</div>'
+    +'<div class="bi"><div class="bn">'+b.name+loBadge+'</div>'+resultHTML+'</div>'
     +'<div class="bp"><div class="bpc t'+t+'">'+pct+'%</div>'+tierHTML+'</div>'
     +'</div>'
     +'<div class="bd" id="'+did+'"><div class="dg">'
