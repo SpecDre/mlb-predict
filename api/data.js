@@ -31,12 +31,14 @@ function calcWeatherFactor(weather) {
   var windSpeed = parseInt(weather.wind) || 0;
   var windDir = (weather.wind || '').toLowerCase();
   if (windSpeed >= 5) {
-    if (windDir.includes('out') || windDir.includes('l to r') || windDir.includes('r to l')) {
+    if (windDir.includes('out to')) {
+      // Only "Out To CF/LF/RF" is truly blowing out
       windF = Math.min(1.15, 1 + windSpeed * .008);
-    } else if (windDir.includes('in')) {
+    } else if (windDir.includes('in from')) {
+      // "In From" = blowing in, suppresses HRs
       windF = Math.max(.85, 1 - windSpeed * .008);
     }
-    // crosswind or calm = neutral
+    // "L To R", "R To L", "Varies", calm = crosswind/neutral, no effect
   }
   return { temp: +tempF.toFixed(3), wind: +windF.toFixed(3), combined: +(tempF * windF).toFixed(3) };
 }
@@ -464,12 +466,15 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
     else loF = 0.95;               // 7-9: fewer PAs, less protection
   }
 
-  var pp = Math.max(.003, Math.min(.08, base * isoF * pitF * fbF * (pf || 1) * platF * scF * wxF * bpF * loF));
+  // Cap the compound multiplier — prevents 10 modest factors from stacking to insane levels
+  var compound = isoF * pitF * fbF * (pf || 1) * platF * scF * wxF * bpF * loF;
+  compound = Math.max(.55, Math.min(1.40, compound));
+
+  var pp = Math.max(.003, Math.min(.065, base * compound));
   var gm = 1 - Math.pow(1 - pp, 3.8);
 
-  // v3 dynamic cap: base 18%, but allow up to 25% when multiple factors align
-  var factorBoost = (wxF > 1.03 ? 1 : 0) + (fbF > 1.05 ? 1 : 0) + (scF > 1.15 ? 1 : 0) + ((pf || 1) > 1.05 ? 1 : 0);
-  var cap = factorBoost >= 3 ? .25 : factorBoost >= 2 ? .22 : .18;
+  // Game probability cap: 18% base, up to 22% only for elite power hitters with factors aligned
+  var cap = (base >= .05 && compound > 1.20) ? .22 : .18;
   gm = Math.max(.005, Math.min(gm, cap));
 
   // Apply H2H AFTER cap — bad matchups can always drag the number down
