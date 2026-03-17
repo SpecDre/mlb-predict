@@ -232,10 +232,12 @@ async function getH2H(bid, pid) {
 // --- HR Drought detection via recent game logs ---
 async function getRecentGameLog(pid) {
   // Fetch current season game log; fall back to last year if no data yet
+  var currentYear = true;
   var d = await fetchJSON(MLB + '/people/' + pid + '/stats?stats=gameLog&season=' + YR + '&group=hitting&gameType=R');
   var splits = d && d.stats && d.stats[0] && d.stats[0].splits;
   if (!splits || splits.length < 5) {
-    // Try last year if current season hasn't started or too few games
+    // Falling back to last year — this data is STALE
+    currentYear = false;
     d = await fetchJSON(MLB + '/people/' + pid + '/stats?stats=gameLog&season=' + (YR - 1) + '&group=hitting&gameType=R');
     splits = d && d.stats && d.stats[0] && d.stats[0].splits;
   }
@@ -263,7 +265,6 @@ async function getRecentGameLog(pid) {
     }
   }
 
-  // If no HR found in last 20 games, drought = 20+
   if (!foundHR) gamesSinceHR = recent.length;
 
   return {
@@ -273,17 +274,21 @@ async function getRecentGameLog(pid) {
     recentH: recentH,
     recentHR: recentHR,
     recentPA: recentPA,
-    recentAVG: recentAB > 0 ? recentH / recentAB : 0
+    recentAVG: recentAB > 0 ? recentH / recentAB : 0,
+    currentYear: currentYear  // false = stale data from last season
   };
 }
 
 // Determine drought tag: "dingerIncoming", "slump", or null
 function calcDroughtTag(gameLog, hrPA, statcast, totHR, numSeasons) {
-  if (!gameLog || gameLog.recentGames < 8) return null; // need enough data
+  if (!gameLog || gameLog.recentGames < 8) return null;
+
+  // GATE: Only show drought tags during the current season.
+  // End-of-last-season data is stale — a "20 game drought" from October
+  // doesn't mean anything in March. Suppress until real 2026 games exist.
+  if (!gameLog.currentYear) return null;
 
   // GATE: Must average at least 8 HR per season AND have 15+ total.
-  // 10 HR over 3 years = 3.3/yr = not a power hitter, no drought tag.
-  // 24 HR over 2 years = 12/yr = legit power hitter, qualifies.
   numSeasons = Math.max(numSeasons || 1, 1);
   var hrPerSeason = totHR / numSeasons;
   if (!totHR || totHR < 15 || hrPerSeason < 8) return null;
