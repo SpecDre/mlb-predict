@@ -468,14 +468,19 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
     bpF = Math.max(.90, Math.min(1.15, .6 + .4 * bpRatio));
   }
 
-  // Lineup position factor — batters 1-4 get more PAs and see more strikes with protection
+  // Lineup position — protection factor only (PA count handled in geometric conversion)
   var loF = 1;
   if (extras.lineupPos) {
     var lp = extras.lineupPos;
-    if (lp <= 2) loF = 1.08;       // Leadoff/2-hole: extra PA, good pitches
-    else if (lp <= 4) loF = 1.10;  // 3/4 hole: most protection, best pitches to hit
-    else if (lp <= 6) loF = 1.02;  // 5/6: moderate
-    else loF = 0.95;               // 7-9: fewer PAs, less protection
+    if (lp <= 4) loF = 1.03;       // 1-4: see slightly better pitches with lineup protection
+    else loF = 1.00;               // 5-9: neutral
+  }
+
+  // PA per game by lineup position — leadoff gets ~4.5, 9-hole gets ~3.2
+  var paPerGame = 3.8;
+  if (extras.lineupPos) {
+    var lpPA = [4.5, 4.3, 4.2, 4.0, 3.9, 3.8, 3.6, 3.4, 3.2];
+    paPerGame = lpPA[Math.min(extras.lineupPos - 1, 8)] || 3.8;
   }
 
   // Cap the compound multiplier — prevents 10 modest factors from stacking to insane levels
@@ -483,7 +488,7 @@ function calcHR(b, opp, pf, h2h, platoon, statcast, extras) {
   compound = Math.max(.55, Math.min(1.40, compound));
 
   var pp = Math.max(.003, Math.min(.065, base * compound));
-  var gm = 1 - Math.pow(1 - pp, 3.8);
+  var gm = 1 - Math.pow(1 - pp, paPerGame);
 
   // Game probability cap: 18% base, up to 22% only for elite power hitters with factors aligned
   var cap = (base >= .05 && compound > 1.20) ? .22 : .18;
@@ -554,17 +559,21 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
     scF = Math.max(.85, Math.min(1.20, xbaRatio * .25 + .75));
   }
 
-  // Lineup position — top of order gets more PAs
+  // Lineup position — protection only (PA handled in geometric conversion)
   var loF = 1;
   if (extras.lineupPos) {
-    var lp = extras.lineupPos;
-    if (lp <= 4) loF = 1.04;       // Top 4: extra PA opportunity
-    else if (lp <= 6) loF = 1.00;
-    else loF = 0.97;               // Bottom third: fewer PAs
+    if (extras.lineupPos <= 4) loF = 1.02;  // Slight boost for lineup protection
+  }
+
+  // PA per game by lineup position
+  var paPerGame = 3.8;
+  if (extras.lineupPos) {
+    var lpPA = [4.5, 4.3, 4.2, 4.0, 3.9, 3.8, 3.6, 3.4, 3.2];
+    paPerGame = lpPA[Math.min(extras.lineupPos - 1, 8)] || 3.8;
   }
 
   var pp = Math.max(.10, Math.min(.42, base * cF * pitF * (pf || 1) * dF * platF * scF * loF));
-  var gm = 1 - Math.pow(1 - pp, 3.8);
+  var gm = 1 - Math.pow(1 - pp, paPerGame);
 
   // Apply H2H after geometric conversion so bad matchups visibly drag the number
   gm = Math.max(.05, Math.min(.98, gm * h2hF));
@@ -601,12 +610,17 @@ function calcWin(a, h, aP, hP, venue) {
   var awP = 1 / (1 + Math.exp(-tot * 4.2));
 
   var bR = LG.rpg * rpf;
+  // Dampened pitcher effect on run totals
+  // Old formula divided by SF which exploded on extreme ERAs (6.50 ERA → 1.55x runs)
+  // New formula: linear scaling dampened at 50% — reasonable range ±25-30%
+  var aPitEffect = 1 + (hE - LG.era) / LG.era * .50;  // How opposing (home) pitcher affects away runs
+  var hPitEffect = 1 + (aE - LG.era) / LG.era * .50;  // How opposing (away) pitcher affects home runs
+  aPitEffect = Math.max(.70, Math.min(1.35, aPitEffect));  // Hard clamp
+  hPitEffect = Math.max(.70, Math.min(1.35, hPitEffect));
   return {
     aProb: Math.round(awP * 100), hProb: Math.round((1 - awP) * 100),
-    // Away team's runs: their offense vs HOME pitcher. Good home pitcher (high hSF) = fewer away runs.
-    aRuns: Math.max(1, Math.round(bR * (a.ops / .72) / hSF * 10) / 10),
-    // Home team's runs: their offense vs AWAY pitcher. Good away pitcher (high aSF) = fewer home runs.
-    hRuns: Math.max(1, Math.round(bR * (h.ops / .72) / aSF * 10) / 10),
+    aRuns: Math.max(1, Math.round(bR * (a.ops / .72) * aPitEffect * 10) / 10),
+    hRuns: Math.max(1, Math.round(bR * (h.ops / .72) * hPitEffect * 10) / 10),
     det: {
       aERA: aE.toFixed(2), hERA: hE.toFixed(2),
       aPyth: (aPyth * 100).toFixed(1), hPyth: (hPyth * 100).toFixed(1),
