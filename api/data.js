@@ -581,7 +581,8 @@ function calcHit(b, opp, pf, h2h, platoon, statcast, extras) {
   var gm = 1 - Math.pow(1 - pp, paPerGame);
 
   // Apply H2H after geometric conversion so bad matchups visibly drag the number
-  gm = Math.max(.05, Math.min(.98, gm * h2hF));
+  // Cap at 88% — even the best contact hitter in the best spot isn't a 90%+ lock
+  gm = Math.max(.05, Math.min(.88, gm * h2hF));
 
   return {
     pct: (gm * 100).toFixed(1),
