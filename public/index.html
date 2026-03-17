@@ -660,7 +660,7 @@ function renderGameCard(gp){
       var liveAWin=liveWP.away>=50;
       gameContent=liveBoard
         +'<div class="wp-row"><div class="wp-tm '+(liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(liveAWin?'hi':'lo')+'">'+liveWP.away+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.aProb+'%</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!liveAWin?'hi':'lo')+'">'+liveWP.home+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.hProb+'%</div></div></div>'
-        +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#8B909A');transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#8B909A');transition:width 0.5s ease"></div></div>'
+        +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#8B909A')+';transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#8B909A')+';transition:width 0.5s ease"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML;
     } else {
