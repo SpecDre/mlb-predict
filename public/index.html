@@ -556,7 +556,7 @@ function renderGameCard(gp){
       var isTie=actualWinner==='TIE';
       var predCorrect=!isTie&&actualWinner===predictedWinner;
       statusHTML='<span class="st-badge st-final">Final</span>'
-        +(isTie?'<span class="pred-result" style="color:var(--tx3)">TIE</span>'
+        +(isTie?'<span class="pred-result" style="color:#FFF;background:rgba(255,255,255,0.2)">TIE</span>'
         :'<span class="pred-result '+(predCorrect?'pred-correct':'pred-wrong')+'">'
         +(predCorrect?'&#10003; Correct':'&#10007; Wrong')+'</span>');
     } else {
