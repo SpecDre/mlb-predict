@@ -80,7 +80,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 /* Final score display */
 .final-score{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd)}
 .final-tm{display:flex;align-items:center;gap:10px}
-.final-abbr{font-size:18px;font-weight:900;font-family:'Playfair Display',serif}
+.final-abbr{font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif}
 .final-abbr.winner{color:var(--grn)}
 .final-abbr.loser{color:var(--tx3)}
 .final-runs{font-size:28px;font-weight:900;font-family:'Playfair Display',serif}
@@ -573,19 +573,19 @@ function renderGameCard(gp){
     var gameTied=live.awayScore===live.homeScore;
     if(gameTied){
       scoreSection='<div class="final-score">'
-        +'<div class="final-tm"><span class="final-abbr">'+gp.away+'</span><span class="final-tag" style="background:var(--tx3);color:#fff">T</span></div>'
+        +'<div class="final-tm"><span class="final-abbr">'+gp.awayName+'</span><span class="final-tag" style="background:var(--tx3);color:#fff">T</span></div>'
         +'<div class="final-runs">'+live.awayScore+'</div>'
         +'<div class="final-vs">-</div>'
         +'<div class="final-runs">'+live.homeScore+'</div>'
-        +'<div class="final-tm"><span class="final-tag" style="background:var(--tx3);color:#fff">T</span><span class="final-abbr">'+gp.home+'</span></div>'
+        +'<div class="final-tm"><span class="final-tag" style="background:var(--tx3);color:#fff">T</span><span class="final-abbr">'+gp.homeName+'</span></div>'
         +'</div>';
     } else {
       scoreSection='<div class="final-score">'
-        +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.away+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
+        +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.awayName+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
         +'<div class="final-runs '+(awayWon?'winner':'loser')+'">'+live.awayScore+'</div>'
         +'<div class="final-vs">-</div>'
         +'<div class="final-runs '+(awayWon?'loser':'winner')+'">'+live.homeScore+'</div>'
-        +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.home+'</span></div>'
+        +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.homeName+'</span></div>'
         +'</div>';
     }
   }
