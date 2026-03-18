@@ -252,20 +252,12 @@ h+='<tr><td style="text-align:center;vertical-align:middle;font-size:14px;font-w
 h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div>'+subInfo+'</td>';
 for(var inn=1;inn<=ti;inn++){
 var abs=b.ab[inn];
-// Check for runner advancement annotations on this cell
-var advKey=(b.id||pid)+'_'+inn;
-var advNotes=runnerAdv[advKey]||[];
-var advHTML=advNotes.length>0?'<div style="position:absolute;top:1px;right:1px;font-size:6px;font-weight:bold;color:#555;z-index:2">'+advNotes.join(' ')+'</div>':'';
 if(abs&&abs.length>0){var a=abs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
 h+=dsvg(a.b,a);
 h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
 if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
-h+=advHTML;
 h+='</td>';
-}else if(advNotes.length>0){
-// Runner advanced in this inning but didn't bat
-h+='<td class="inn-cell" style="background:#fff">'+advHTML+'</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
 }
 h+='<td class="stat-col">'+(bt.atBats||'')+'</td><td class="stat-col">'+(bt.hits||'')+'</td><td class="stat-col">'+(bt.baseOnBalls||'')+'</td><td class="stat-col">'+(bt.strikeOuts||'')+'</td><td class="stat-col">'+(bt.runs||'')+'</td><td class="stat-col">'+(bt.rbi||'')+'</td><td class="stat-col">'+(bt.errors||'')+'</td></tr>';
