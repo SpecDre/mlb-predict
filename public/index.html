@@ -664,7 +664,8 @@ function renderGameCard(gp){
       gameContent=scoreSection+liveBoard
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +v3HTML+pythHTML+wxHTML
-        +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore===live.homeScore?'TIE ':live.awayScore>live.homeScore?gp.away+' wins ':gp.home+' wins ')+live.awayScore+'-'+live.homeScore+'</div>';
+        +'<div class="gc-verdict">Predicted: '+predictedWinner+' '+conf+'% — Actual: '+(live.awayScore===live.homeScore?'TIE ':live.awayScore>live.homeScore?gp.away+' wins ':gp.home+' wins ')+live.awayScore+'-'+live.homeScore+'</div>'
+        +'<div style="padding:4px 16px 10px;text-align:center"><a href="https://www.youtube.com/results?search_query='+encodeURIComponent(gp.awayName+' vs '+gp.homeName+' highlights '+new Date(gp.gameDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}))+'" target="_blank" rel="noopener" style="font-size:11px;color:var(--blu);text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.8 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.8-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>Watch Highlights</a></div>';
     } else if(isLive){
       var liveWP=calcLiveWP(p.aProb, live.awayScore, live.homeScore, live.inning, live.isTopInning, live.outs);
       var liveAWin=liveWP.away>=50;
