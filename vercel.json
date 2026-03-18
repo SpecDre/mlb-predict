@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/scorebook",
-      "destination": "/scorebook.html"
-    },
-    {
       "source": "/api/mlb/(.*)",
       "destination": "/api/proxy?mlbpath=/$1"
     }
