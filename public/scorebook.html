@@ -62,13 +62,32 @@ else{if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}}
 
 function setTeam(t){currentTeam=t;renderAll()}
 
-function dsvg(bases){
+function dsvg(bases,play){
 var cx=CW/2,cy=CH*0.46,r=Math.min(CW,CH)*0.18;
 var T={x:cx,y:cy-r},R={x:cx+r,y:cy},Bo={x:cx,y:cy+r},L={x:cx-r,y:cy},bm=2.8;
 var b1=bases&&bases.first,b2=bases&&bases.second,b3=bases&&bases.third,bH=bases&&bases.home;
+var balls=play?play.balls:0,strikes=play?play.strikes:0,outs=play?play.outs:0;
+var ev=play?play.ev:'';
+// Map event to which label to circle
+var resultLabel='';
+if(ev==='Single')resultLabel='1B';
+if(ev==='Double')resultLabel='2B';
+if(ev==='Triple')resultLabel='3B';
+if(ev==='Home Run')resultLabel='HR';
+if(ev==='Walk'||ev==='Intent Walk')resultLabel='BB';
+if(ev==='Field Error')resultLabel='E';
+if(ev==='Fielders Choice'||ev==='Fielders Choice Out')resultLabel='FC';
+if(ev==='Sac Fly'||ev==='Sac Bunt'||ev==='Sacrifice Bunt')resultLabel='SAC';
 var s='<svg width="'+CW+'" height="'+CH+'" viewBox="0 0 '+CW+' '+CH+'">';
+// Top labels with circle highlight
 var lbs=['1B','2B','3B','HR','BB'],gap=(CW-6)/5;
-for(var i=0;i<5;i++)s+='<text x="'+(3+i*gap+gap/2)+'" y="10" text-anchor="middle" fill="#000" font-size="8" font-weight="bold" font-family="Arial">'+lbs[i]+'</text>';
+for(var i=0;i<5;i++){
+var lx=3+i*gap+gap/2,ly=10;
+var isResult=lbs[i]===resultLabel;
+if(isResult)s+='<circle cx="'+lx+'" cy="'+(ly-3)+'" r="7" fill="none" stroke="#c02020" stroke-width="1.5"/>';
+s+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" fill="'+(isResult?'#c02020':'#000')+'" font-size="8" font-weight="bold" font-family="Arial">'+lbs[i]+'</text>';
+}
+// Diamond
 s+='<polygon points="'+T.x+','+T.y+' '+R.x+','+R.y+' '+Bo.x+','+Bo.y+' '+L.x+','+L.y+'" fill="none" stroke="#000" stroke-width="1.2"/>';
 if(b1)s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+R.x+'" y2="'+R.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
 if(b2)s+='<line x1="'+R.x+'" y1="'+R.y+'" x2="'+T.x+'" y2="'+T.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
@@ -76,16 +95,28 @@ if(b3)s+='<line x1="'+T.x+'" y1="'+T.y+'" x2="'+L.x+'" y2="'+L.y+'" stroke="#2a8
 if(bH)s+='<line x1="'+L.x+'" y1="'+L.y+'" x2="'+Bo.x+'" y2="'+Bo.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
 var pts=[T,R,Bo,L],fl=[b2,b1,false,b3];
 for(var j=0;j<4;j++){var p=pts[j];s+='<polygon points="'+p.x+','+(p.y-bm)+' '+(p.x+bm)+','+p.y+' '+p.x+','+(p.y+bm)+' '+(p.x-bm)+','+p.y+'" fill="'+(fl[j]?'#2a8a2a':'none')+'" stroke="#000" stroke-width="0.6"/>';}
-s+='<text x="'+(CW-2)+'" y="'+(cy-r+4)+'" text-anchor="end" fill="#000" font-size="8" font-weight="bold">E</text>';
-s+='<text x="'+(CW-2)+'" y="'+(cy+1)+'" text-anchor="end" fill="#000" font-size="8" font-weight="bold">FC</text>';
-s+='<text x="'+(CW-2)+'" y="'+(cy+r-2)+'" text-anchor="end" fill="#000" font-size="8" font-weight="bold">SAC</text>';
+// Right labels with circle highlight
+var rLabels=[{l:'E',y:cy-r+4},{l:'FC',y:cy+1},{l:'SAC',y:cy+r-2}];
+for(var ri=0;ri<3;ri++){var rl=rLabels[ri];var isR=rl.l===resultLabel;
+if(isR)s+='<circle cx="'+(CW-6)+'" cy="'+(rl.y-3)+'" r="8" fill="none" stroke="#c02020" stroke-width="1.5"/>';
+s+='<text x="'+(CW-2)+'" y="'+rl.y+'" text-anchor="end" fill="'+(isR?'#c02020':'#000')+'" font-size="8" font-weight="bold">'+rl.l+'</text>';}
+// B boxes — fill based on ball count
 s+='<text x="8" y="'+(CH-30)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">B</text>';
-for(var bn=3;bn>=1;bn--){var bi=3-bn;s+='<rect x="3" y="'+(CH-28+bi*8)+'" width="9" height="7" fill="none" stroke="#000" stroke-width="0.6"/><text x="7.5" y="'+(CH-24.5+bi*8)+'" text-anchor="middle" dominant-baseline="central" fill="#000" font-size="6.5" font-weight="bold">'+bn+'</text>';}
+for(var bn=3;bn>=1;bn--){var bi=3-bn;var bFill=balls>=bn?'#000':'none';
+s+='<rect x="3" y="'+(CH-28+bi*8)+'" width="9" height="7" fill="'+bFill+'" stroke="#000" stroke-width="0.6"/>';
+s+='<text x="7.5" y="'+(CH-24.5+bi*8)+'" text-anchor="middle" dominant-baseline="central" fill="'+(balls>=bn?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+bn+'</text>';}
+// S boxes — fill based on strike count
 s+='<text x="18" y="'+(CH-22)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">S</text>';
-for(var sn=2;sn>=1;sn--){var si=2-sn;s+='<rect x="13" y="'+(CH-20+si*8)+'" width="9" height="7" fill="none" stroke="#000" stroke-width="0.6"/><text x="17.5" y="'+(CH-16.5+si*8)+'" text-anchor="middle" dominant-baseline="central" fill="#000" font-size="6.5" font-weight="bold">'+sn+'</text>';}
-for(var on=1;on<=3;on++){var oi=on-1;s+='<rect x="'+(CW-30+oi*9)+'" y="'+(CH-20)+'" width="8" height="7" fill="none" stroke="#000" stroke-width="0.6"/><text x="'+(CW-26+oi*9)+'" y="'+(CH-16.5)+'" text-anchor="middle" dominant-baseline="central" fill="#000" font-size="6.5" font-weight="bold">'+on+'</text>';}
+for(var sn=2;sn>=1;sn--){var si=2-sn;var sFill=strikes>=sn?'#000':'none';
+s+='<rect x="13" y="'+(CH-20+si*8)+'" width="9" height="7" fill="'+sFill+'" stroke="#000" stroke-width="0.6"/>';
+s+='<text x="17.5" y="'+(CH-16.5+si*8)+'" text-anchor="middle" dominant-baseline="central" fill="'+(strikes>=sn?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+sn+'</text>';}
+// OUTS boxes — fill based on which out this was
+for(var on=1;on<=3;on++){var oi=on-1;var oFill=play&&play.t==='out'&&outs===on?'#000':'none';
+s+='<rect x="'+(CW-30+oi*9)+'" y="'+(CH-20)+'" width="8" height="7" fill="'+oFill+'" stroke="#000" stroke-width="0.6"/>';
+s+='<text x="'+(CW-26+oi*9)+'" y="'+(CH-16.5)+'" text-anchor="middle" dominant-baseline="central" fill="'+(oFill==='#000'?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+on+'</text>';}
 s+='<text x="'+(CW-12)+'" y="'+(CH-5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">OUTS</text>';
-s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="#bbb" font-size="7" font-style="italic">PC</text>';
+// Pitch count
+s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="'+(play&&play.pc?'#000':'#bbb')+'" font-size="7" font-weight="'+(play&&play.pc?'bold':'normal')+'" font-style="italic">'+((play&&play.pc)?play.pc:'PC')+'</text>';
 s+='</svg>';return s;
 }
 
@@ -111,7 +142,8 @@ if(!bm[bid].ab[inn])bm[bid].ab[inn]=[];
 var bases={first:false,second:false,third:false,home:false};
 (p.runners||[]).forEach(function(r){if(r.movement&&r.details&&r.details.isBatter){var e=r.movement.end;if(e==='1B')bases.first=true;if(e==='2B'){bases.first=true;bases.second=true}if(e==='3B'){bases.first=true;bases.second=true;bases.third=true}if(e==='score'){bases.first=true;bases.second=true;bases.third=true;bases.home=true}}});
 var pc=p.playEvents?p.playEvents.filter(function(e){return e.isPitch}).length:0;
-bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0});
+var cnt=p.count||{};
+bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:p.about.outs||0});
 });
 var order=os;
 var opIds=od.pitchers||[];
@@ -124,7 +156,7 @@ h+='<table class="hdr-table"><tbody><tr><td style="width:25%"><b>Date:</b> '+ds+
 if(state==='Live')h+=' <span class="live-badge"><span class="live-dot"></span>LIVE</span>';
 else if(state==='Final')h+=' <span style="font-size:10px;color:#555">(FINAL)</span>';
 h+='</td><td><b>Start:</b> '+st+'</td></tr>';
-h+='<tr><td><b>'+aw.abbreviation+'</b> vs <b>'+ho.abbreviation+'</b></td><td style="text-align:center"><b>Field:</b> '+venue+'</td><td><b>Length:</b> '+(state==='Final'&&ls?ls.innings.length+' inn.':'\u2014')+'</td></tr>';
+h+='<tr><td><b>'+aw.abbreviation+'</b> vs <b>'+ho.abbreviation+'</b></td><td style="text-align:center"><b>Field:</b> '+venue+'</td><td><b>Length:</b> '+(function(){var dm=gd.gameInfo&&gd.gameInfo.gameDurationMinutes;if(!dm)return'\u2014';var hrs=Math.floor(dm/60),mins=dm%60;return hrs+':'+(mins<10?'0':'')+mins;}())+'</td></tr>';
 h+='<tr><td>'+(wx.temp?wx.temp+'\u00B0F, '+(wx.condition||''):'\u2014')+'</td><td style="text-align:center">'+(wx.wind?'Wind: '+wx.wind:'\u2014')+'</td><td><b>ATT:</b> '+(gd.gameInfo&&gd.gameInfo.attendance||'\u2014')+'</td></tr></tbody></table>';
 // Toggle
 h+='<div class="toggle"><button class="'+(side==='away'?'active':'inactive')+'" onclick="setTeam(\'away\')">'+aw.abbreviation+' (Batting)</button><button class="'+(side==='home'?'active':'inactive')+'" onclick="setTeam(\'home\')">'+ho.abbreviation+' (Batting)</button></div>';
@@ -142,9 +174,8 @@ for(var inn=1;inn<=ti;inn++){
 var abs=b.ab[inn];
 if(abs&&abs.length>0){var a=abs[0];
 h+='<td class="inn-cell'+(a.t==='hr'?' hr-cell':'')+'">';
-h+=dsvg(a.b);
+h+=dsvg(a.b,a);
 h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
-if(a.pc)h+='<div class="cell-pc">'+a.pc+'</div>';
 if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
 h+='</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
@@ -172,12 +203,35 @@ var prows=opIds.map(function(pid){var pd=opl['ID'+pid]||{};var ps=pd.stats&&pd.s
 var mr=Math.max(prows.length,6);
 for(var pi=0;pi<mr;pi++){var pr=prows[pi];h+='<tr><td style="text-align:center;font-size:10px">'+(pr?pr.num:(pi+1))+'</td><td style="width:130px;text-align:left;padding:0 4px;font-weight:bold;font-size:10px">'+(pr?pr.name:'')+'</td>';psc.forEach(function(c){h+='<td style="width:26px">'+(pr?pr[c.toLowerCase()]||'':'')+'</td>'});h+='</tr>';}
 h+='</tbody></table>';
-// Catcher
+// Catcher — find catchers who played for the batting team
+var catchers=[];
+for(var ck in pl){var cp=pl[ck];if(cp.position&&cp.position.abbreviation==='C'&&cp.stats&&cp.stats.fielding&&cp.stats.fielding.gamesStarted>0){catchers.push({num:cp.jerseyNumber||'',name:cp.person&&cp.person.fullName||'',pb:cp.stats.fielding.passedBall||0,cs:cp.stats.fielding.caughtStealing||0,sb:cp.stats.fielding.stolenBases||0});}}
 h+='<table class="cat-table"><thead><tr><th style="width:24px">#</th><th style="width:100px;text-align:left">CATCHER</th><th style="width:30px;font-size:10px">PB</th><th style="width:30px;font-size:10px">CS</th><th style="width:30px;font-size:10px">SB</th></tr></thead><tbody>';
-for(var ci=0;ci<3;ci++)h+='<tr><td></td><td></td><td></td><td></td><td></td></tr>';
+var mcr=Math.max(catchers.length,2);
+for(var ci=0;ci<mcr;ci++){var cc=catchers[ci];h+='<tr><td style="text-align:center;font-size:10px">'+(cc?cc.num:'')+'</td><td style="text-align:left;padding:0 4px;font-weight:bold;font-size:10px">'+(cc?cc.name:'')+'</td><td>'+(cc?cc.pb:'')+'</td><td>'+(cc?cc.cs:'')+'</td><td>'+(cc?cc.sb:'')+'</td></tr>';}
 h+='</tbody></table>';
-// Field
-h+='<svg width="150" height="148" viewBox="0 0 150 148" style="flex-shrink:0;background:#fff;border:2px solid #000"><line x1="75" y1="138" x2="8" y2="71" stroke="#000" stroke-width="1"/><line x1="75" y1="138" x2="142" y2="71" stroke="#000" stroke-width="1"/><path d="M 8,71 A 95,95 0 0,1 142,71" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="75,86 101,112 75,138 49,112" fill="none" stroke="#000" stroke-width="1.2"/><text x="75" y="56" text-anchor="middle" font-size="13" font-weight="bold">8</text><text x="30" y="80" text-anchor="middle" font-size="13" font-weight="bold">7</text><text x="120" y="80" text-anchor="middle" font-size="13" font-weight="bold">9</text><text x="58" y="103" text-anchor="middle" font-size="11" font-weight="bold">6</text><text x="92" y="103" text-anchor="middle" font-size="11" font-weight="bold">4</text><text x="44" y="117" text-anchor="middle" font-size="11" font-weight="bold">5</text><text x="75" y="117" text-anchor="middle" font-size="11" font-weight="bold">1</text><text x="106" y="117" text-anchor="middle" font-size="11" font-weight="bold">3</text><text x="75" y="148" text-anchor="middle" font-size="13" font-weight="bold">2</text></svg>';
+// Field diagram with hit tracker
+var hitDots=[];
+(plays.allPlays||[]).forEach(function(p){
+if(!p.about||!p.matchup)return;
+var isT=p.about.isTopInning;
+if((side==='away'&&!isT)||(side==='home'&&isT))return;
+var evts=p.playEvents||[];
+for(var ei=evts.length-1;ei>=0;ei--){
+if(evts[ei].hitData&&evts[ei].hitData.coordinates){
+var c=evts[ei].hitData.coordinates;
+var ev=p.result&&p.result.event||'';
+var col=gtype(ev)==='hit'?'#2a8a2a':gtype(ev)==='hr'?'#FFD700':gtype(ev)==='error'?'#BA7517':'#c02020';
+var sx=c.coordX*150/250,sy=c.coordY*148/250;
+hitDots.push({x:sx,y:sy,c:col,n:p.matchup.batter.fullName.split(' ').pop()});
+break;
+}}
+});
+h+='<svg width="150" height="148" viewBox="0 0 150 148" style="flex-shrink:0;background:#fff;border:2px solid #000">';
+h+='<line x1="75" y1="138" x2="8" y2="71" stroke="#000" stroke-width="1"/><line x1="75" y1="138" x2="142" y2="71" stroke="#000" stroke-width="1"/><path d="M 8,71 A 95,95 0 0,1 142,71" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="75,86 101,112 75,138 49,112" fill="none" stroke="#000" stroke-width="1.2"/>';
+h+='<text x="75" y="56" text-anchor="middle" font-size="13" font-weight="bold">8</text><text x="30" y="80" text-anchor="middle" font-size="13" font-weight="bold">7</text><text x="120" y="80" text-anchor="middle" font-size="13" font-weight="bold">9</text><text x="58" y="103" text-anchor="middle" font-size="11" font-weight="bold">6</text><text x="92" y="103" text-anchor="middle" font-size="11" font-weight="bold">4</text><text x="44" y="117" text-anchor="middle" font-size="11" font-weight="bold">5</text><text x="75" y="117" text-anchor="middle" font-size="11" font-weight="bold">1</text><text x="106" y="117" text-anchor="middle" font-size="11" font-weight="bold">3</text><text x="75" y="148" text-anchor="middle" font-size="13" font-weight="bold">2</text>';
+hitDots.forEach(function(d){h+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="3" fill="'+d.c+'" stroke="#000" stroke-width="0.5" opacity="0.85"/>';});
+h+='</svg>';
 h+='</div>';
 h+='<div class="game-notes"><b>W:</b> \u2014 \u00B7 <b>L:</b> \u2014 \u00B7 <b>S:</b> \u2014 \u00B7 <b>HBP:</b> \u2014 \u00B7 <b>IBB:</b> \u2014 \u00B7 <b>SB:</b> \u2014 \u00B7 <b>CS:</b> \u2014 \u00B7 <b>Venue:</b> '+venue+'</div>';
 document.getElementById('content').innerHTML=h;
