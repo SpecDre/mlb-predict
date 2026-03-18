@@ -20,15 +20,23 @@ a{color:#000}
 .sb{border-collapse:collapse;border:3px solid #000;background:#fff}
 .sb th,.sb td{border:2px solid #000}
 .sb thead th{background:#000;color:#fff;padding:6px 2px;font-size:13px}
-.inn-cell{width:82px;height:82px;padding:0;background:#fff;position:relative}
+.inn-cell{width:130px;height:110px;padding:0;background:#fff;position:relative}
 .inn-cell.dead{background:#3a3a3a}
 .inn-cell.score-cell{background:#d4edda}
 .stat-col{width:28px;text-align:center;font-size:12px;font-weight:bold;vertical-align:middle}
 .sum-runs{color:#c02020}
-.cell-nota{position:absolute;top:38px;left:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:bold;z-index:1}
-.cell-nota.hit{color:#2a8a2a}.cell-nota.hr{color:#2a8a2a;font-size:11px}.cell-nota.out{color:#c02020}.cell-nota.walk{color:#2A6CB6}.cell-nota.error{color:#BA7517}
+.cell-nota{position:absolute;left:65px;top:37px;transform:translate(-50%,-50%);font-size:14px;font-weight:900;z-index:1}
+.cell-nota.hit{color:#2a8a2a}.cell-nota.hr{color:#2a8a2a}.cell-nota.out{color:#c02020}.cell-nota.walk{color:#2A6CB6}.cell-nota.error{color:#BA7517}
 .cell-pc{display:none}
-.cell-rbi{position:absolute;left:2px;top:14px;font-size:7px;font-weight:bold;color:#c02020;z-index:1}
+.cell-seq{position:absolute;left:2px;top:11px;font-size:6.5px;font-family:'Courier Prime',monospace;line-height:1.5;z-index:1;color:#333}
+.cell-seq .ps-b{color:#1a7a1a}.cell-seq .ps-s{color:#c02020}.cell-seq .ps-f{color:#888}.cell-seq .ps-x{color:#000;font-weight:bold}
+.cell-rbi{position:absolute;right:2px;top:11px;font-size:7px;font-weight:bold;color:#c02020;z-index:1}
+.cell-count{position:absolute;left:3px;bottom:2px;font-family:'Courier Prime',monospace;text-align:center}
+.cell-count .lbl{font-size:6px;font-weight:bold;color:#555}
+.cell-count .val{font-size:9px;font-weight:bold}
+.cell-outs{position:absolute;right:3px;bottom:2px;font-family:'Courier Prime',monospace;text-align:center}
+.cell-outs .lbl{font-size:6px;font-weight:bold;color:#555}
+.cell-outs .val{font-size:9px;font-weight:bold}
 .bottom{display:flex;gap:16px;margin-top:8px;align-items:flex-start;flex-wrap:wrap}
 .pit-table,.cat-table{border-collapse:collapse;border:3px solid #000;background:#fff}
 .pit-table th,.pit-table td,.cat-table th,.cat-table td{border:2px solid #000}
@@ -48,7 +56,7 @@ a{color:#000}
 <div id="content"><div class="loading">Loading scorebook...</div></div>
 </div>
 <script>
-var PROXY='/api/proxy',gamePk=new URLSearchParams(location.search).get('gamePk'),gameData=null,currentTeam='away',refreshTimer=null,CW=82,CH=82;
+var PROXY='/api/proxy',gamePk=new URLSearchParams(location.search).get('gamePk'),gameData=null,currentTeam='away',refreshTimer=null,CW=75,CH=105;
 
 function fetchGame(){
 if(!gamePk){document.getElementById('content').innerHTML='<div class="loading">No gamePk. Add ?gamePk=XXXXX</div>';return}
@@ -99,24 +107,6 @@ for(var j=0;j<4;j++){var p=pts[j];s+='<polygon points="'+p.x+','+(p.y-bm)+' '+(p
 var rLabels=[{l:'E',y:cy-r+4},{l:'FC',y:cy+1},{l:'SAC',y:cy+r-2}];
 for(var ri=0;ri<3;ri++){var rl=rLabels[ri];var isR=rl.l===resultLabel;
 s+='<text x="'+(CW-2)+'" y="'+rl.y+'" text-anchor="end" fill="'+(isR?lblCol[resultLabel]||'#c02020':'#000')+'" font-size="'+(isR?'9':'8')+'" font-weight="bold">'+rl.l+'</text>';}
-// B boxes — fill based on ball count
-s+='<text x="8" y="'+(CH-30)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">B</text>';
-for(var bn=3;bn>=1;bn--){var bi=3-bn;var bFill=balls>=bn?'#000':'none';
-s+='<rect x="3" y="'+(CH-28+bi*8)+'" width="9" height="7" fill="'+bFill+'" stroke="#000" stroke-width="0.6"/>';
-s+='<text x="7.5" y="'+(CH-24.5+bi*8)+'" text-anchor="middle" dominant-baseline="central" fill="'+(balls>=bn?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+bn+'</text>';}
-// S boxes — fill based on strike count
-s+='<text x="18" y="'+(CH-22)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">S</text>';
-for(var sn=2;sn>=1;sn--){var si=2-sn;var sFill=strikes>=sn?'#000':'none';
-s+='<rect x="13" y="'+(CH-20+si*8)+'" width="9" height="7" fill="'+sFill+'" stroke="#000" stroke-width="0.6"/>';
-s+='<text x="17.5" y="'+(CH-16.5+si*8)+'" text-anchor="middle" dominant-baseline="central" fill="'+(strikes>=sn?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+sn+'</text>';}
-// OUTS boxes — only fill when THIS batter made an out
-var isOut=play&&(play.t==='out');
-for(var on=1;on<=3;on++){var oi=on-1;var oFill=isOut&&outs>=on?'#000':'none';
-s+='<rect x="'+(CW-30+oi*9)+'" y="'+(CH-20)+'" width="8" height="7" fill="'+oFill+'" stroke="#000" stroke-width="0.6"/>';
-s+='<text x="'+(CW-26+oi*9)+'" y="'+(CH-16.5)+'" text-anchor="middle" dominant-baseline="central" fill="'+(oFill==='#000'?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+on+'</text>';}
-s+='<text x="'+(CW-12)+'" y="'+(CH-5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">OUTS</text>';
-// Pitch count
-s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="'+(play&&play.pc?'#555':'#bbb')+'" font-size="7" font-style="italic">'+((play&&play.pc)?'PC:'+play.pc:'PC')+'</text>';
 // Trajectory line from home plate
 if(play&&play.hc){
 var hx=play.hc.coordX,hy=play.hc.coordY;
@@ -220,8 +210,19 @@ var pc=p.playEvents?p.playEvents.filter(function(e){return e.isPitch}).length:0;
 var cnt=p.count||{};
 var hitCoords=null;
 var pevts=p.playEvents||[];
-for(var ei=pevts.length-1;ei>=0;ei--){if(pevts[ei].hitData&&pevts[ei].hitData.coordinates){hitCoords=pevts[ei].hitData.coordinates;break;}}
-bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event,credits),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords});
+// Extract pitch-by-pitch sequence
+var pitchSeq=[];
+for(var ei=0;ei<pevts.length;ei++){
+if(pevts[ei].isPitch){
+var pd=pevts[ei].details||{};
+var pt=pd.type||{};
+var pc2=pd.call||{};
+var spd=pevts[ei].pitchData&&pevts[ei].pitchData.startSpeed;
+pitchSeq.push({call:pc2.code||'?',type:pt.code||'??',spd:spd?Math.round(spd):''});
+}
+if(pevts[ei].hitData&&pevts[ei].hitData.coordinates&&!hitCoords)hitCoords=pevts[ei].hitData.coordinates;
+}
+bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event,credits),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords,seq:pitchSeq});
 });
 // Detect substitutions by tracking PA sequence
 var subInfo={};
@@ -275,7 +276,7 @@ h+='<tr><td>'+(wx.temp?wx.temp+'\u00B0F, '+(wx.condition||''):'\u2014')+'</td><t
 h+='<div class="toggle"><button class="'+(side==='away'?'active':'inactive')+'" onclick="setTeam(\'away\')">'+aw.abbreviation+' (Batting)</button><button class="'+(side==='home'?'active':'inactive')+'" onclick="setTeam(\'home\')">'+ho.abbreviation+' (Batting)</button></div>';
 // Grid
 h+='<table class="sb"><thead><tr><th style="width:28px">#</th><th style="width:140px;text-align:left;padding-left:4px">BATTER</th>';
-for(var i=1;i<=ti;i++)h+='<th style="width:82px;font-size:15px">'+i+'</th>';
+for(var i=1;i<=ti;i++)h+='<th style="width:130px;font-size:15px">'+i+'</th>';
 for(var si2=0;si2<sc.length;si2++)h+='<th style="width:28px;font-size:10px">'+sc[si2]+'</th>';
 h+='</tr></thead><tbody>';
 slots.forEach(function(slot,idx){
@@ -300,18 +301,35 @@ for(var inn=1;inn<=ti;inn++){
 // Check starter first, then sub
 var sAbs=s0.ab[inn];
 var subAbs=s1&&s1.ab[inn];
+function rseq(seq){
+if(!seq||!seq.length)return'';
+var sh='<div class="cell-seq">';
+seq.forEach(function(p){
+var cls=p.call==='B'?'ps-b':(p.call==='C'||p.call==='S'||p.call==='T'||p.call==='M')?'ps-s':(p.call==='F'||p.call==='R')?'ps-f':'ps-x';
+sh+='<div class="'+cls+'">'+p.call+' '+p.type+' '+p.spd+'</div>';
+});
+sh+='</div>';return sh;
+}
+function rcnt(a){
+var ch='<div class="cell-count"><div class="lbl">COUNT</div><div class="val">'+a.balls+'-'+a.strikes+'</div></div>';
+if(a.t==='out'){var n=a.outs;var txt=n===1?'1 OUT':n+' OUTS';ch+='<div class="cell-outs"><div class="lbl">OUTS</div><div class="val"'+(n>=3?' style="color:#c02020"':'')+'>'+txt+'</div></div>';}
+return ch;
+}
 if(sAbs&&sAbs.length>0){var a=sAbs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
-h+=dsvg(a.b,a);
+h+='<div style="position:absolute;right:0;top:0">'+dsvg(a.b,a)+'</div>';
+h+=rseq(a.seq);
 h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
 if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
+h+=rcnt(a);
 h+='</td>';
 }else if(subAbs&&subAbs.length>0){var a2=subAbs[0];
-// Sub's at-bat — baby blue background
 h+='<td class="inn-cell'+(a2.b&&a2.b.home?' score-cell':'')+'" style="'+(!(a2.b&&a2.b.home)?'background:#E0F0FF':'')+'">';
-h+=dsvg(a2.b,a2);
+h+='<div style="position:absolute;right:0;top:0">'+dsvg(a2.b,a2)+'</div>';
+h+=rseq(a2.seq);
 h+='<div class="cell-nota '+a2.t+'">'+a2.n+'</div>';
 if(a2.rbi>0)h+='<div class="cell-rbi">'+a2.rbi+'RBI</div>';
+h+=rcnt(a2);
 h+='</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
 }
