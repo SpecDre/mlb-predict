@@ -25,10 +25,10 @@ a{color:#000}
 .inn-cell.hr-cell{background:#FFFDE7}
 .stat-col{width:28px;text-align:center;font-size:12px;font-weight:bold;vertical-align:middle}
 .sum-runs{color:#c02020}
-.cell-nota{position:absolute;top:32px;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:bold;z-index:1}
-.cell-nota.hit{color:#2a8a2a}.cell-nota.hr{color:#2a8a2a;font-size:13px}.cell-nota.out{color:#c02020}.cell-nota.walk{color:#2A6CB6}.cell-nota.error{color:#BA7517}
-.cell-pc{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:7px;font-style:italic;color:#666;z-index:1}
-.cell-rbi{position:absolute;bottom:6px;left:4px;font-size:7px;font-weight:bold;color:#c02020;z-index:1}
+.cell-nota{position:absolute;top:38px;left:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:bold;z-index:1}
+.cell-nota.hit{color:#2a8a2a}.cell-nota.hr{color:#2a8a2a;font-size:11px}.cell-nota.out{color:#c02020}.cell-nota.walk{color:#2A6CB6}.cell-nota.error{color:#BA7517}
+.cell-pc{display:none}
+.cell-rbi{position:absolute;left:2px;top:42px;font-size:7px;font-weight:bold;color:#c02020;z-index:1}
 .bottom{display:flex;gap:16px;margin-top:8px;align-items:flex-start;flex-wrap:wrap}
 .pit-table,.cat-table{border-collapse:collapse;border:3px solid #000;background:#fff}
 .pit-table th,.pit-table td,.cat-table th,.cat-table td{border:2px solid #000}
@@ -116,7 +116,7 @@ s+='<rect x="'+(CW-30+oi*9)+'" y="'+(CH-20)+'" width="8" height="7" fill="'+oFil
 s+='<text x="'+(CW-26+oi*9)+'" y="'+(CH-16.5)+'" text-anchor="middle" dominant-baseline="central" fill="'+(oFill==='#000'?'#fff':'#000')+'" font-size="6.5" font-weight="bold">'+on+'</text>';}
 s+='<text x="'+(CW-12)+'" y="'+(CH-5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">OUTS</text>';
 // Pitch count
-s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="'+(play&&play.pc?'#000':'#bbb')+'" font-size="7" font-weight="'+(play&&play.pc?'bold':'normal')+'" font-style="italic">'+((play&&play.pc)?play.pc+'P':'PC')+'</text>';
+s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="'+(play&&play.pc?'#555':'#bbb')+'" font-size="7" font-style="italic">'+((play&&play.pc)?'PC:'+play.pc:'PC')+'</text>';
 // Trajectory line from home plate
 if(play&&play.hc){
 var hx=play.hc.coordX,hy=play.hc.coordY;
