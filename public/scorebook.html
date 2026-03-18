@@ -294,13 +294,19 @@ h+='</tbody></table>';
 var defPlayers={};
 var defPl=opl;
 for(var dk in defPl){var dp=defPl[dk];if(dp.position&&dp.stats&&dp.stats.fielding&&dp.stats.fielding.gamesStarted>0){var pc=dp.position.code;if(!defPlayers[pc])defPlayers[pc]={name:dp.person?dp.person.fullName.split(' ').pop():'',num:dp.jerseyNumber||''};}}
-var posXY={'1':{x:75,y:120},'2':{x:75,y:144},'3':{x:108,y:114},'4':{x:95,y:100},'5':{x:44,y:114},'6':{x:55,y:100},'7':{x:28,y:76},'8':{x:75,y:52},'9':{x:122,y:76}};
-h+='<svg width="180" height="160" viewBox="0 0 180 160" style="flex-shrink:0;background:#fff;border:2px solid #000">';
-h+='<line x1="90" y1="148" x2="15" y2="76" stroke="#000" stroke-width="1"/><line x1="90" y1="148" x2="165" y2="76" stroke="#000" stroke-width="1"/><path d="M 15,76 A 110,110 0 0,1 165,76" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="90,95 115,120 90,148 65,120" fill="none" stroke="#000" stroke-width="1.2"/>';
-var posMap={'1':{x:90,y:128},'2':{x:90,y:155},'3':{x:120,y:120},'4':{x:108,y:105},'5':{x:55,y:120},'6':{x:68,y:105},'7':{x:32,y:80},'8':{x:90,y:56},'9':{x:148,y:80}};
+h+='<svg width="220" height="200" viewBox="0 0 220 200" style="flex-shrink:0;background:#fff;border:2px solid #000">';
+// Foul lines from home plate
+h+='<line x1="110" y1="180" x2="10" y2="80" stroke="#000" stroke-width="1"/>';
+h+='<line x1="110" y1="180" x2="210" y2="80" stroke="#000" stroke-width="1"/>';
+// Outfield fence arc
+h+='<path d="M 10,80 A 140,140 0 0,1 210,80" fill="none" stroke="#000" stroke-width="1.5"/>';
+// Diamond - corners on foul lines
+h+='<polygon points="110,110 145,145 110,180 75,145" fill="none" stroke="#000" stroke-width="1.2"/>';
+// Player positions - well clear of diamond
+var posMap={'1':{x:110,y:155},'2':{x:110,y:195},'3':{x:160,y:148},'4':{x:145,y:120},'5':{x:60,y:148},'6':{x:75,y:120},'7':{x:30,y:85},'8':{x:110,y:48},'9':{x:190,y:85}};
 for(var pk in posMap){var pp=posMap[pk];var dn=defPlayers[pk];
-h+='<text x="'+pp.x+'" y="'+(pp.y-4)+'" text-anchor="middle" font-size="6" fill="#555" font-family="Arial">'+pk+'</text>';
-h+='<text x="'+pp.x+'" y="'+(pp.y+4)+'" text-anchor="middle" font-size="7" font-weight="bold" font-family="Arial">'+(dn?dn.name:'')+'</text>';
+h+='<text x="'+pp.x+'" y="'+(pp.y-5)+'" text-anchor="middle" font-size="9" fill="#555" font-weight="bold" font-family="Arial">'+pk+'</text>';
+h+='<text x="'+pp.x+'" y="'+(pp.y+5)+'" text-anchor="middle" font-size="9" font-weight="bold" font-family="Arial">'+(dn?dn.name:'')+'</text>';
 }
 h+='</svg>';
 h+='</div>';
