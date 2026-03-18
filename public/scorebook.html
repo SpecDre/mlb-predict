@@ -28,7 +28,6 @@ a{color:#000}
 .cell-pc{display:none}
 .cell-seq{position:absolute;left:2px;top:11px;font-size:6.5px;font-family:'Courier Prime',monospace;line-height:1.5;z-index:1;color:#333}
 .cell-seq .ps-b{color:#1a7a1a}.cell-seq .ps-s{color:#c02020}.cell-seq .ps-f{color:#888}.cell-seq .ps-x{color:#000;font-weight:bold}
-.cell-bottom{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:space-between;padding:0 4px;font-family:Arial,sans-serif}
 .bottom{display:flex;gap:16px;margin-top:8px;align-items:flex-start;flex-wrap:wrap}
 .pit-table,.cat-table{border-collapse:collapse;border:3px solid #000;background:#fff}
 .pit-table th,.pit-table td,.cat-table th,.cat-table td{border:2px solid #000}
@@ -63,12 +62,14 @@ else{if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}}
 function setTeam(t){currentTeam=t;renderAll()}
 
 function dsvg(bases,play){
-var cx=CW/2,cy=CH*0.46,r=Math.min(CW,CH)*0.18;
-var T={x:cx,y:cy-r},R={x:cx+r,y:cy},Bo={x:cx,y:cy+r},L={x:cx-r,y:cy},bm=2.8;
+// Full cell SVG: 130x110. Diamond on right half, pitch seq overlays left via HTML.
+var W=130,H=110;
+// Diamond centered at (85,45), radius 20
+var dcx=85,dcy=45,dr=20;
+var T={x:dcx,y:dcy-dr},R={x:dcx+dr,y:dcy},Bo={x:dcx,y:dcy+dr},L={x:dcx-dr,y:dcy};
+var bm=3;
 var b1=bases&&bases.first,b2=bases&&bases.second,b3=bases&&bases.third,bH=bases&&bases.home;
-var balls=play?play.balls:0,strikes=play?play.strikes:0,outs=play?play.outs:0;
 var ev=play?play.ev:'';
-// Map event to which label to circle
 var resultLabel='';
 if(ev==='Single')resultLabel='1B';
 if(ev==='Double')resultLabel='2B';
@@ -78,48 +79,62 @@ if(ev==='Walk'||ev==='Intent Walk'||ev==='Hit By Pitch')resultLabel='BB';
 if(ev==='Field Error')resultLabel='E';
 if(ev==='Fielders Choice'||ev==='Fielders Choice Out')resultLabel='FC';
 if(ev==='Sac Fly'||ev==='Sac Bunt'||ev==='Sacrifice Bunt')resultLabel='SAC';
-var s='<svg width="'+CW+'" height="'+CH+'" viewBox="0 0 '+CW+' '+CH+'">';
-// Top labels — color the result text (green=hit, blue=walk, red=error)
-var lbs=['1B','2B','3B','HR','BB'],gap=(CW-6)/5;
 var lblCol={'1B':'#2a8a2a','2B':'#2a8a2a','3B':'#2a8a2a','HR':'#2a8a2a','BB':'#2A6CB6','E':'#c02020','FC':'#BA7517','SAC':'#555'};
+var s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+// Top labels (1B 2B 3B HR BB) spread across x=48 to x=122
+var lbs=['1B','2B','3B','HR','BB'];
 for(var i=0;i<5;i++){
-var lx=3+i*gap+gap/2,ly=10;
-var isResult=lbs[i]===resultLabel;
-s+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" fill="'+(isResult?lblCol[resultLabel]||'#c02020':'#000')+'" font-size="'+(isResult?'9':'8')+'" font-weight="bold" font-family="Arial">'+lbs[i]+'</text>';
+var lx=48+i*19;
+var isR=lbs[i]===resultLabel;
+s+='<text x="'+lx+'" y="11" text-anchor="middle" fill="'+(isR?lblCol[resultLabel]||'#c02020':'#555')+'" font-size="'+(isR?'9':'7.5')+'" font-weight="bold" font-family="Arial">'+lbs[i]+'</text>';
 }
-// Diamond
+// Diamond outline
 s+='<polygon points="'+T.x+','+T.y+' '+R.x+','+R.y+' '+Bo.x+','+Bo.y+' '+L.x+','+L.y+'" fill="none" stroke="#000" stroke-width="1.2"/>';
+// Base path highlights
 if(b1)s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+R.x+'" y2="'+R.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
 if(b2)s+='<line x1="'+R.x+'" y1="'+R.y+'" x2="'+T.x+'" y2="'+T.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
 if(b3)s+='<line x1="'+T.x+'" y1="'+T.y+'" x2="'+L.x+'" y2="'+L.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
 if(bH)s+='<line x1="'+L.x+'" y1="'+L.y+'" x2="'+Bo.x+'" y2="'+Bo.y+'" stroke="#2a8a2a" stroke-width="2.5"/>';
+// Base markers
 var pts=[T,R,Bo,L],fl=[b2,b1,false,b3];
 for(var j=0;j<4;j++){var p=pts[j];s+='<polygon points="'+p.x+','+(p.y-bm)+' '+(p.x+bm)+','+p.y+' '+p.x+','+(p.y+bm)+' '+(p.x-bm)+','+p.y+'" fill="'+(fl[j]?'#2a8a2a':'none')+'" stroke="#000" stroke-width="0.6"/>';}
-// Right labels — color the result text
-var rLabels=[{l:'E',y:cy-r+4},{l:'FC',y:cy+1},{l:'SAC',y:cy+r-2}];
-for(var ri=0;ri<3;ri++){var rl=rLabels[ri];var isR=rl.l===resultLabel;
-s+='<text x="'+(CW-2)+'" y="'+rl.y+'" text-anchor="end" fill="'+(isR?lblCol[resultLabel]||'#c02020':'#000')+'" font-size="'+(isR?'9':'8')+'" font-weight="bold">'+rl.l+'</text>';}
-// Trajectory line from home plate
+// Home plate dot
+s+='<circle cx="'+Bo.x+'" cy="'+Bo.y+'" r="1.8" fill="#888"/>';
+// E/FC/SAC labels on far right
+var rLbls=[{l:'E',y:dcy-12},{l:'FC',y:dcy+1},{l:'SAC',y:dcy+14}];
+for(var ri=0;ri<3;ri++){var rl=rLbls[ri];var isRR=rl.l===resultLabel;
+s+='<text x="128" y="'+rl.y+'" text-anchor="end" fill="'+(isRR?lblCol[resultLabel]||'#c02020':'#555')+'" font-size="'+(isRR?'8':'7')+'" font-weight="bold" font-family="Arial">'+rl.l+'</text>';}
+// Trajectory line
 if(play&&play.hc){
 var hx=play.hc.coordX,hy=play.hc.coordY;
 var dx=hx-125,dy=200-hy;
 var ang=Math.atan2(dx,dy);
 var dist=Math.sqrt(dx*dx+dy*dy);
-var lineLen=Math.min(38,dist*0.28);
+var lineLen=Math.min(35,dist*0.25);
 var endX=Bo.x+Math.sin(ang)*lineLen;
 var endY=Bo.y-Math.cos(ang)*lineLen;
 var tCol=play.t==='hr'?'#DAA520':play.t==='hit'?'#2a8a2a':play.t==='error'?'#BA7517':'#c02020';
 s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+endX.toFixed(1)+'" y2="'+endY.toFixed(1)+'" stroke="'+tCol+'" stroke-width="2" stroke-dasharray="3 2" opacity="0.8"/>';
 s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2.5" fill="'+tCol+'" opacity="0.9"/>';
 }
-// Result notation centered on diamond
+// Result notation — dead center of diamond
 if(play&&play.n){
 var nCol=play.t==='hit'||play.t==='hr'?'#2a8a2a':play.t==='walk'?'#2A6CB6':play.t==='error'?'#BA7517':'#c02020';
-s+='<text x="'+cx+'" y="'+(cy+1)+'" text-anchor="middle" dominant-baseline="central" fill="'+nCol+'" font-size="14" font-weight="900" font-family="Arial">'+play.n+'</text>';
+s+='<text x="'+dcx+'" y="'+dcy+'" text-anchor="middle" dominant-baseline="central" fill="'+nCol+'" font-size="15" font-weight="900" font-family="Arial">'+play.n+'</text>';
 }
-// RBI badge
+// RBI badge — top right
 if(play&&play.rbi>0){
-s+='<text x="'+(CW-2)+'" y="'+(CH-2)+'" text-anchor="end" fill="#c02020" font-size="7" font-weight="bold" font-family="Arial">'+play.rbi+'RBI</text>';
+s+='<text x="128" y="11" text-anchor="end" fill="#c02020" font-size="8" font-weight="bold" font-family="Arial">'+play.rbi+'RBI</text>';
+}
+// BELOW DIAMOND: Count (left) and Outs (right)
+if(play){
+// Count
+s+='<text x="55" y="85" text-anchor="middle" fill="#000" font-size="9" font-weight="bold" font-family="Arial">'+play.balls+'-'+play.strikes+'</text>';
+// Outs — only when batter made an out
+if(play.t==='out'){
+var n=play.outs;var otxt=n===1?'1 OUT':n+' OUTS';
+s+='<text x="110" y="85" text-anchor="middle" fill="'+(n>=3?'#c02020':'#000')+'" font-size="9" font-weight="bold" font-family="Arial">'+otxt+'</text>';
+}
 }
 s+='</svg>';return s;
 }
@@ -311,23 +326,15 @@ sh+='<div class="'+cls+'">'+p.call+' '+p.type+' '+p.spd+'</div>';
 });
 sh+='</div>';return sh;
 }
-function rcnt(a){
-var left='<span style="font-size:8px;font-weight:bold">'+a.balls+'-'+a.strikes+'</span>';
-var right='';
-if(a.t==='out'){var n=a.outs;right='<span style="font-size:8px;font-weight:bold'+(n>=3?';color:#c02020':'')+'">'+(n===1?'1 OUT':n+' OUTS')+'</span>';}
-return '<div class="cell-bottom">'+left+right+'</div>';
-}
 if(sAbs&&sAbs.length>0){var a=sAbs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
-h+='<div style="position:absolute;right:0;top:0">'+dsvg(a.b,a)+'</div>';
+h+=dsvg(a.b,a);
 h+=rseq(a.seq);
-h+=rcnt(a);
 h+='</td>';
 }else if(subAbs&&subAbs.length>0){var a2=subAbs[0];
 h+='<td class="inn-cell'+(a2.b&&a2.b.home?' score-cell':'')+'" style="'+(!(a2.b&&a2.b.home)?'background:#E0F0FF':'')+'">';
-h+='<div style="position:absolute;right:0;top:0">'+dsvg(a2.b,a2)+'</div>';
+h+=dsvg(a2.b,a2);
 h+=rseq(a2.seq);
-h+=rcnt(a2);
 h+='</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
 }
