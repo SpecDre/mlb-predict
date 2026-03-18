@@ -132,7 +132,26 @@ s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2" fill="'+tCol
 s+='</svg>';return s;
 }
 
-function nota(ev){var m={'Strikeout':'K','Strikeout Looking':'\u{A741}','Strikeout Swinging':'K','Walk':'BB','Intent Walk':'IBB','Hit By Pitch':'HBP','Single':'1B','Double':'2B','Triple':'3B','Home Run':'HR','Groundout':'GO','Flyout':'FO','Lineout':'LO','Pop Out':'PO','Grounded Into DP':'GDP','Double Play':'DP','Sac Fly':'SF','Sac Bunt':'SAC','Sacrifice Bunt':'SAC','Field Error':'E','Fielders Choice':'FC','Fielders Choice Out':'FC','Force Out':'FO','Catcher Interf':'CI'};return m[ev]||ev.substring(0,3).toUpperCase();}
+function nota(ev,credits){
+// Build defensive notation from fielding credits
+if(credits&&credits.length>0){
+var assists=[],putouts=[];
+credits.forEach(function(c){if(c.credit==='f_assist')assists.push(c.pos);if(c.credit==='f_putout')putouts.push(c.pos);if(c.credit==='f_fielded_error')assists.push(c.pos);});
+// Fly/line/pop outs: F9, L8, P5
+if(ev==='Flyout'&&putouts.length)return'F'+putouts[0];
+if(ev==='Lineout'&&putouts.length)return'L'+putouts[0];
+if(ev==='Pop Out'&&putouts.length)return'P'+putouts[0];
+// Ground outs: 6-3, 4-3, etc
+if(ev==='Groundout'&&(assists.length||putouts.length)){var play=assists.concat(putouts);return play.join('-');}
+if(ev==='Force Out'&&(assists.length||putouts.length)){var play2=assists.concat(putouts);return play2.join('-');}
+if((ev==='Grounded Into DP'||ev==='Double Play')&&(assists.length||putouts.length)){var play3=assists.concat(putouts);return play3.join('-')+'DP';}
+if(ev==='Sac Fly'&&putouts.length)return'SF'+putouts[0];
+if(ev==='Sac Bunt'||ev==='Sacrifice Bunt'){var play4=assists.concat(putouts);return play4.length?'SAC'+play4.join('-'):'SAC';}
+if(ev==='Field Error'&&assists.length)return'E'+assists[0];
+if(ev==='Fielders Choice'||ev==='Fielders Choice Out'){var play5=assists.concat(putouts);return'FC'+play5.join('-');}
+}
+var m={'Strikeout':'K','Strikeout Looking':'\u{A741}','Strikeout Swinging':'K','Walk':'BB','Intent Walk':'IBB','Hit By Pitch':'HBP','Single':'1B','Double':'2B','Triple':'3B','Home Run':'HR','Groundout':'GO','Flyout':'FO','Lineout':'LO','Pop Out':'PO','Grounded Into DP':'GDP','Double Play':'DP','Sac Fly':'SF','Sac Bunt':'SAC','Sacrifice Bunt':'SAC','Field Error':'E','Fielders Choice':'FC','Fielders Choice Out':'FC','Force Out':'FO','Catcher Interf':'CI'};return m[ev]||ev.substring(0,3).toUpperCase();
+}
 function gtype(ev){if(['Single','Double','Triple'].indexOf(ev)>=0)return'hit';if(ev==='Home Run')return'hr';if(['Walk','Intent Walk','Hit By Pitch'].indexOf(ev)>=0)return'walk';if(ev==='Field Error')return'error';return'out';}
 
 function renderAll(){
@@ -143,22 +162,65 @@ var side=currentTeam,opp=side==='away'?'home':'away';
 var td=box.teams[side],od=box.teams[opp],pl=td.players||{},opl=od.players||{};
 var bo=td.battingOrder||[],state=gd.status&&gd.status.abstractGameState||'';
 var ti=Math.max(9,(ld.linescore&&ld.linescore.innings?ld.linescore.innings.length:9));
-var bm={},os=[];
+var bm={},os=[],subs=[],runnerAdv={};
+// Collect substitutions
+(plays.allPlays||[]).forEach(function(p){
+(p.playEvents||[]).forEach(function(e){
+if(e.type==='action'&&e.details){
+var desc=e.details.description||'';
+var ev=e.details.event||'';
+var isT=p.about.isTopInning,inn=p.about.inning;
+if((side==='away'&&!isT)||(side==='home'&&isT)){
+if(ev.indexOf('Substitution')>=0||ev.indexOf('Switch')>=0||ev.indexOf('remains')>=0){
+subs.push({inn:inn,desc:desc});
+}}
+// Track SB/CS/WP/PB/BK for runner advancement
+if(ev.indexOf('Stolen Base')>=0||ev.indexOf('Caught Stealing')>=0||ev.indexOf('Wild Pitch')>=0||ev.indexOf('Passed Ball')>=0||ev.indexOf('Balk')>=0){
+if((side==='away'&&isT)||(side==='home'&&!isT)){
+// Find which runner
+(p.runners||[]).forEach(function(r){
+if(r.details&&!r.details.isBatter&&r.movement&&r.movement.start){
+var rid=r.details.runner&&r.details.runner.id;
+if(rid){
+var key=rid+'_'+inn;
+if(!runnerAdv[key])runnerAdv[key]=[];
+var shortEv=ev.indexOf('Stolen')>=0?'SB':ev.indexOf('Caught')>=0?'CS':ev.indexOf('Wild')>=0?'WP':ev.indexOf('Passed')>=0?'PB':'BK';
+runnerAdv[key].push(shortEv);
+}}});
+}}
+}});
+});
+
 (plays.allPlays||[]).forEach(function(p){
 if(!p.about||!p.matchup||!p.result||!p.result.event)return;
 var isT=p.about.isTopInning,inn=p.about.inning;
 if((side==='away'&&!isT)||(side==='home'&&isT))return;
 var bid=p.matchup.batter&&p.matchup.batter.id;if(!bid)return;
-if(!bm[bid]){var pd=pl['ID'+bid]||{};bm[bid]={name:p.matchup.batter.fullName||'?',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};os.push(bid);}
+if(!bm[bid]){var pd=pl['ID'+bid]||{};bm[bid]={id:bid,name:p.matchup.batter.fullName||'?',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};os.push(bid);}
 if(!bm[bid].ab[inn])bm[bid].ab[inn]=[];
 var bases={first:false,second:false,third:false,home:false};
-(p.runners||[]).forEach(function(r){if(r.movement&&r.details&&r.details.isBatter){var e=r.movement.end;if(e==='1B')bases.first=true;if(e==='2B'){bases.first=true;bases.second=true}if(e==='3B'){bases.first=true;bases.second=true;bases.third=true}if(e==='score'){bases.first=true;bases.second=true;bases.third=true;bases.home=true}}});
+// Collect defensive credits
+var credits=[];
+(p.runners||[]).forEach(function(r){
+if(r.movement&&r.details&&r.details.isBatter){var e=r.movement.end;if(e==='1B')bases.first=true;if(e==='2B'){bases.first=true;bases.second=true}if(e==='3B'){bases.first=true;bases.second=true;bases.third=true}if(e==='score'){bases.first=true;bases.second=true;bases.third=true;bases.home=true}}
+if(r.credits){r.credits.forEach(function(c){credits.push({pos:c.position&&c.position.code||'',credit:c.credit||''})});}
+// Track non-batter runner advancement
+if(r.details&&!r.details.isBatter&&r.movement&&r.movement.start&&r.movement.end){
+var rid=r.details.runner&&r.details.runner.id;
+if(rid&&r.movement.end!==r.movement.start){
+var key=rid+'_'+inn;
+if(!runnerAdv[key])runnerAdv[key]=[];
+var mv=r.movement.start+'→'+r.movement.end;
+if(r.movement.end==='score')mv=r.movement.start+'→H';
+runnerAdv[key].push(mv);
+}}
+});
 var pc=p.playEvents?p.playEvents.filter(function(e){return e.isPitch}).length:0;
 var cnt=p.count||{};
 var hitCoords=null;
 var pevts=p.playEvents||[];
 for(var ei=pevts.length-1;ei>=0;ei--){if(pevts[ei].hitData&&pevts[ei].hitData.coordinates){hitCoords=pevts[ei].hitData.coordinates;break;}}
-bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords});
+bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event,credits),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords});
 });
 var order=os;
 var opIds=od.pitchers||[];
@@ -181,18 +243,29 @@ for(var i=1;i<=ti;i++)h+='<th style="width:82px;font-size:15px">'+i+'</th>';
 for(var si2=0;si2<sc.length;si2++)h+='<th style="width:28px;font-size:10px">'+sc[si2]+'</th>';
 h+='</tr></thead><tbody>';
 order.forEach(function(pid,idx){
-var b=bm[pid];if(!b){var pd=pl['ID'+pid]||{};b={name:pd.person&&pd.person.fullName||'\u2014',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};}
+var b=bm[pid];if(!b){var pd=pl['ID'+pid]||{};b={id:pid,name:pd.person&&pd.person.fullName||'\u2014',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};}
 var ps=pl['ID'+pid],bt=ps&&ps.stats&&ps.stats.batting||{};
+// Check for substitution info for this player
+var subInfo='';
+subs.forEach(function(s){if(s.desc.indexOf(b.name)>=0&&s.desc.indexOf('replaces')>=0)subInfo='<div style="font-size:7px;color:#c02020;margin-top:1px">IN: inn '+s.inn+'</div>';});
 h+='<tr><td style="text-align:center;vertical-align:middle;font-size:14px;font-weight:bold">'+(idx+1)+'</td>';
-h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div></td>';
+h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div>'+subInfo+'</td>';
 for(var inn=1;inn<=ti;inn++){
 var abs=b.ab[inn];
+// Check for runner advancement annotations on this cell
+var advKey=(b.id||pid)+'_'+inn;
+var advNotes=runnerAdv[advKey]||[];
+var advHTML=advNotes.length>0?'<div style="position:absolute;top:1px;right:1px;font-size:6px;font-weight:bold;color:#555;z-index:2">'+advNotes.join(' ')+'</div>':'';
 if(abs&&abs.length>0){var a=abs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
 h+=dsvg(a.b,a);
 h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
 if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
+h+=advHTML;
 h+='</td>';
+}else if(advNotes.length>0){
+// Runner advanced in this inning but didn't bat
+h+='<td class="inn-cell" style="background:#fff">'+advHTML+'</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
 }
 h+='<td class="stat-col">'+(bt.atBats||'')+'</td><td class="stat-col">'+(bt.hits||'')+'</td><td class="stat-col">'+(bt.baseOnBalls||'')+'</td><td class="stat-col">'+(bt.strikeOuts||'')+'</td><td class="stat-col">'+(bt.runs||'')+'</td><td class="stat-col">'+(bt.rbi||'')+'</td><td class="stat-col">'+(bt.errors||'')+'</td></tr>';
@@ -239,7 +312,12 @@ h+='<text x="'+pp.x+'" y="'+(pp.y+4)+'" text-anchor="middle" font-size="7" font-
 }
 h+='</svg>';
 h+='</div>';
-h+='<div class="game-notes"><b>W:</b> \u2014 \u00B7 <b>L:</b> \u2014 \u00B7 <b>S:</b> \u2014 \u00B7 <b>HBP:</b> \u2014 \u00B7 <b>IBB:</b> \u2014 \u00B7 <b>SB:</b> \u2014 \u00B7 <b>CS:</b> \u2014 \u00B7 <b>Venue:</b> '+venue+'</div>';
+// Game notes with W/L/S
+var dec=ld.decisions||{};
+var wPitch=dec.winner?dec.winner.fullName:'\u2014';
+var lPitch=dec.loser?dec.loser.fullName:'\u2014';
+var sPitch=dec.save?dec.save.fullName:'\u2014';
+h+='<div class="game-notes"><b>W:</b> '+wPitch+' \u00B7 <b>L:</b> '+lPitch+' \u00B7 <b>S:</b> '+sPitch+' \u00B7 <b>Venue:</b> '+venue+'</div>';
 document.getElementById('content').innerHTML=h;
 }
 fetchGame();
