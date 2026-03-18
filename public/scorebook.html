@@ -224,6 +224,40 @@ for(var ei=pevts.length-1;ei>=0;ei--){if(pevts[ei].hitData&&pevts[ei].hitData.co
 bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event,credits),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords});
 });
 var order=os;
+// Detect substitutions: first 9 batters are starters, rest are subs
+// Track lineup slots by plate appearance sequence
+var subInfo={};
+if(order.length>9){
+var paSeq=[];
+(plays.allPlays||[]).forEach(function(p){
+if(!p.about||!p.matchup||!p.result||!p.result.event)return;
+var isT=p.about.isTopInning,inn=p.about.inning;
+if((side==='away'&&!isT)||(side==='home'&&isT))return;
+paSeq.push({id:p.matchup.batter.id,inn:inn});
+});
+// First 9 unique = slots 1-9
+var slotMap={},slotIds=[];
+paSeq.forEach(function(pa){
+if(!slotMap[pa.id]&&slotIds.length<9){slotIds.push(pa.id);slotMap[pa.id]=slotIds.length;}
+});
+// For each PA after starters are set, if new batter appears, find which slot they took
+var cyclePos=0;
+var seen={};
+paSeq.forEach(function(pa){
+if(!seen[pa.id]){
+seen[pa.id]=true;
+if(!slotMap[pa.id]){
+// Sub — figure out slot: this batter appeared where slot X was expected
+var expectedSlot=(cyclePos%9)+1;
+var replacedId=slotIds[expectedSlot-1];
+var replacedB=bm[replacedId];
+subInfo[pa.id]={slot:expectedSlot,replaced:replacedB?replacedB.name:'?',inn:pa.inn};
+slotMap[pa.id]=expectedSlot;
+slotIds[expectedSlot-1]=pa.id;
+}}
+cyclePos++;
+});
+}
 var opIds=od.pitchers||[];
 var wx=gd.weather||{},venue=gd.venue&&gd.venue.name||'',ds=gd.datetime&&gd.datetime.officialDate||'';
 var st=gd.datetime&&gd.datetime.time?(gd.datetime.time+' '+(gd.datetime.ampm||'')):'';
@@ -246,11 +280,12 @@ h+='</tr></thead><tbody>';
 order.forEach(function(pid,idx){
 var b=bm[pid];if(!b){var pd=pl['ID'+pid]||{};b={id:pid,name:pd.person&&pd.person.fullName||'\u2014',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};}
 var ps=pl['ID'+pid],bt=ps&&ps.stats&&ps.stats.batting||{};
-// Check for substitution info for this player
-var subInfo='';
-subs.forEach(function(s){if(s.desc.indexOf(b.name)>=0&&s.desc.indexOf('replaces')>=0)subInfo='<div style="font-size:7px;color:#c02020;margin-top:1px">IN: inn '+s.inn+'</div>';});
-h+='<tr><td style="text-align:center;vertical-align:middle;font-size:14px;font-weight:bold">'+(idx+1)+'</td>';
-h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div>'+subInfo+'</td>';
+// Substitution label
+var si3=subInfo[pid];
+var subHTML=si3?'<div style="font-size:7px;color:#c02020;margin-top:1px">\u21B3 for '+si3.replaced+' (inn '+si3.inn+')</div>':'';
+var slotNum=si3?si3.slot:(idx<9?idx+1:idx+1);
+h+='<tr'+(si3?' style="background:#fff8f8"':'')+'><td style="text-align:center;vertical-align:middle;font-size:14px;font-weight:bold">'+slotNum+'</td>';
+h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div>'+subHTML+'</td>';
 for(var inn=1;inn<=ti;inn++){
 var abs=b.ab[inn];
 if(abs&&abs.length>0){var a=abs[0];
