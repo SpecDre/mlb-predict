@@ -113,12 +113,12 @@ var hx=play.hc.coordX,hy=play.hc.coordY;
 var dx=hx-125,dy=200-hy;
 var ang=Math.atan2(dx,dy);
 var dist=Math.sqrt(dx*dx+dy*dy);
-var lineLen=Math.min(30,dist*0.22);
+var lineLen=Math.min(38,dist*0.28);
 var endX=Bo.x+Math.sin(ang)*lineLen;
 var endY=Bo.y-Math.cos(ang)*lineLen;
 var tCol=play.t==='hr'?'#DAA520':play.t==='hit'?'#2a8a2a':play.t==='error'?'#BA7517':'#c02020';
-s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+endX.toFixed(1)+'" y2="'+endY.toFixed(1)+'" stroke="'+tCol+'" stroke-width="1.8" opacity="0.7"/>';
-s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2" fill="'+tCol+'" opacity="0.8"/>';
+s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+endX.toFixed(1)+'" y2="'+endY.toFixed(1)+'" stroke="'+tCol+'" stroke-width="2" stroke-dasharray="3 2" opacity="0.8"/>';
+s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2.5" fill="'+tCol+'" opacity="0.9"/>';
 }
 s+='</svg>';return s;
 }
