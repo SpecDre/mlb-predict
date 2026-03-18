@@ -117,6 +117,19 @@ s+='<text x="'+(CW-26+oi*9)+'" y="'+(CH-16.5)+'" text-anchor="middle" dominant-b
 s+='<text x="'+(CW-12)+'" y="'+(CH-5)+'" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">OUTS</text>';
 // Pitch count
 s+='<text x="'+cx+'" y="'+(CH-5)+'" text-anchor="middle" fill="'+(play&&play.pc?'#000':'#bbb')+'" font-size="7" font-weight="'+(play&&play.pc?'bold':'normal')+'" font-style="italic">'+((play&&play.pc)?play.pc+'P':'PC')+'</text>';
+// Trajectory line from home plate
+if(play&&play.hc){
+var hx=play.hc.coordX,hy=play.hc.coordY;
+var dx=hx-125,dy=200-hy;
+var ang=Math.atan2(dx,dy);
+var dist=Math.sqrt(dx*dx+dy*dy);
+var lineLen=Math.min(30,dist*0.22);
+var endX=Bo.x+Math.sin(ang)*lineLen;
+var endY=Bo.y-Math.cos(ang)*lineLen;
+var tCol=play.t==='hr'?'#DAA520':play.t==='hit'?'#2a8a2a':play.t==='error'?'#BA7517':'#c02020';
+s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+endX.toFixed(1)+'" y2="'+endY.toFixed(1)+'" stroke="'+tCol+'" stroke-width="1.8" opacity="0.7"/>';
+s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2" fill="'+tCol+'" opacity="0.8"/>';
+}
 s+='</svg>';return s;
 }
 
@@ -143,7 +156,10 @@ var bases={first:false,second:false,third:false,home:false};
 (p.runners||[]).forEach(function(r){if(r.movement&&r.details&&r.details.isBatter){var e=r.movement.end;if(e==='1B')bases.first=true;if(e==='2B'){bases.first=true;bases.second=true}if(e==='3B'){bases.first=true;bases.second=true;bases.third=true}if(e==='score'){bases.first=true;bases.second=true;bases.third=true;bases.home=true}}});
 var pc=p.playEvents?p.playEvents.filter(function(e){return e.isPitch}).length:0;
 var cnt=p.count||{};
-bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:p.about.outs||0});
+var hitCoords=null;
+var pevts=p.playEvents||[];
+for(var ei=pevts.length-1;ei>=0;ei--){if(pevts[ei].hitData&&pevts[ei].hitData.coordinates){hitCoords=pevts[ei].hitData.coordinates;break;}}
+bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:p.about.outs||0,hc:hitCoords});
 });
 var order=os;
 var opIds=od.pitchers||[];
@@ -210,27 +226,18 @@ h+='<table class="cat-table"><thead><tr><th style="width:24px">#</th><th style="
 var mcr=Math.max(catchers.length,2);
 for(var ci=0;ci<mcr;ci++){var cc=catchers[ci];h+='<tr><td style="text-align:center;font-size:10px">'+(cc?cc.num:'')+'</td><td style="text-align:left;padding:0 4px;font-weight:bold;font-size:10px">'+(cc?cc.name:'')+'</td><td>'+(cc?cc.pb:'')+'</td><td>'+(cc?cc.cs:'')+'</td><td>'+(cc?cc.sb:'')+'</td></tr>';}
 h+='</tbody></table>';
-// Field diagram with hit tracker
-var hitDots=[];
-(plays.allPlays||[]).forEach(function(p){
-if(!p.about||!p.matchup)return;
-var isT=p.about.isTopInning;
-if((side==='away'&&!isT)||(side==='home'&&isT))return;
-var evts=p.playEvents||[];
-for(var ei=evts.length-1;ei>=0;ei--){
-if(evts[ei].hitData&&evts[ei].hitData.coordinates){
-var c=evts[ei].hitData.coordinates;
-var ev=p.result&&p.result.event||'';
-var col=gtype(ev)==='hit'?'#2a8a2a':gtype(ev)==='hr'?'#FFD700':gtype(ev)==='error'?'#BA7517':'#c02020';
-var sx=c.coordX*150/250,sy=c.coordY*148/250;
-hitDots.push({x:sx,y:sy,c:col,n:p.matchup.batter.fullName.split(' ').pop()});
-break;
-}}
-});
-h+='<svg width="150" height="148" viewBox="0 0 150 148" style="flex-shrink:0;background:#fff;border:2px solid #000">';
-h+='<line x1="75" y1="138" x2="8" y2="71" stroke="#000" stroke-width="1"/><line x1="75" y1="138" x2="142" y2="71" stroke="#000" stroke-width="1"/><path d="M 8,71 A 95,95 0 0,1 142,71" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="75,86 101,112 75,138 49,112" fill="none" stroke="#000" stroke-width="1.2"/>';
-h+='<text x="75" y="56" text-anchor="middle" font-size="13" font-weight="bold">8</text><text x="30" y="80" text-anchor="middle" font-size="13" font-weight="bold">7</text><text x="120" y="80" text-anchor="middle" font-size="13" font-weight="bold">9</text><text x="58" y="103" text-anchor="middle" font-size="11" font-weight="bold">6</text><text x="92" y="103" text-anchor="middle" font-size="11" font-weight="bold">4</text><text x="44" y="117" text-anchor="middle" font-size="11" font-weight="bold">5</text><text x="75" y="117" text-anchor="middle" font-size="11" font-weight="bold">1</text><text x="106" y="117" text-anchor="middle" font-size="11" font-weight="bold">3</text><text x="75" y="148" text-anchor="middle" font-size="13" font-weight="bold">2</text>';
-hitDots.forEach(function(d){h+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="3" fill="'+d.c+'" stroke="#000" stroke-width="0.5" opacity="0.85"/>';});
+// Field diagram with defensive starters
+var defPlayers={};
+var defPl=opl;
+for(var dk in defPl){var dp=defPl[dk];if(dp.position&&dp.stats&&dp.stats.fielding&&dp.stats.fielding.gamesStarted>0){var pc=dp.position.code;if(!defPlayers[pc])defPlayers[pc]={name:dp.person?dp.person.fullName.split(' ').pop():'',num:dp.jerseyNumber||''};}}
+var posXY={'1':{x:75,y:120},'2':{x:75,y:144},'3':{x:108,y:114},'4':{x:95,y:100},'5':{x:44,y:114},'6':{x:55,y:100},'7':{x:28,y:76},'8':{x:75,y:52},'9':{x:122,y:76}};
+h+='<svg width="180" height="160" viewBox="0 0 180 160" style="flex-shrink:0;background:#fff;border:2px solid #000">';
+h+='<line x1="90" y1="148" x2="15" y2="76" stroke="#000" stroke-width="1"/><line x1="90" y1="148" x2="165" y2="76" stroke="#000" stroke-width="1"/><path d="M 15,76 A 110,110 0 0,1 165,76" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="90,95 115,120 90,148 65,120" fill="none" stroke="#000" stroke-width="1.2"/>';
+var posMap={'1':{x:90,y:128},'2':{x:90,y:155},'3':{x:120,y:120},'4':{x:108,y:105},'5':{x:55,y:120},'6':{x:68,y:105},'7':{x:32,y:80},'8':{x:90,y:56},'9':{x:148,y:80}};
+for(var pk in posMap){var pp=posMap[pk];var dn=defPlayers[pk];
+h+='<text x="'+pp.x+'" y="'+(pp.y-4)+'" text-anchor="middle" font-size="6" fill="#555" font-family="Arial">'+pk+'</text>';
+h+='<text x="'+pp.x+'" y="'+(pp.y+4)+'" text-anchor="middle" font-size="7" font-weight="bold" font-family="Arial">'+(dn?dn.name:'')+'</text>';
+}
 h+='</svg>';
 h+='</div>';
 h+='<div class="game-notes"><b>W:</b> \u2014 \u00B7 <b>L:</b> \u2014 \u00B7 <b>S:</b> \u2014 \u00B7 <b>HBP:</b> \u2014 \u00B7 <b>IBB:</b> \u2014 \u00B7 <b>SB:</b> \u2014 \u00B7 <b>CS:</b> \u2014 \u00B7 <b>Venue:</b> '+venue+'</div>';
