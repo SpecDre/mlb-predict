@@ -113,7 +113,7 @@ var bases={first:false,second:false,third:false,home:false};
 var pc=p.playEvents?p.playEvents.filter(function(e){return e.isPitch}).length:0;
 bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0});
 });
-var order=bo.length>0?bo:os;
+var order=os;
 var opIds=od.pitchers||[];
 var wx=gd.weather||{},venue=gd.venue&&gd.venue.name||'',ds=gd.datetime&&gd.datetime.officialDate||'';
 var st=gd.datetime&&gd.datetime.time?(gd.datetime.time+' '+(gd.datetime.ampm||'')):'';
