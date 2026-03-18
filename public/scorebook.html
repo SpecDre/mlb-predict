@@ -223,41 +223,42 @@ var pevts=p.playEvents||[];
 for(var ei=pevts.length-1;ei>=0;ei--){if(pevts[ei].hitData&&pevts[ei].hitData.coordinates){hitCoords=pevts[ei].hitData.coordinates;break;}}
 bm[bid].ab[inn].push({ev:p.result.event,n:nota(p.result.event,credits),t:gtype(p.result.event),b:bases,pc:pc,rbi:p.result.rbi||0,balls:cnt.balls||0,strikes:cnt.strikes||0,outs:cnt.outs||0,hc:hitCoords});
 });
-var order=os;
-// Detect substitutions: first 9 batters are starters, rest are subs
-// Track lineup slots by plate appearance sequence
+// Detect substitutions by tracking PA sequence
 var subInfo={};
-if(order.length>9){
-var paSeq=[];
+if(os.length>9){
+var paSeq2=[];
 (plays.allPlays||[]).forEach(function(p){
 if(!p.about||!p.matchup||!p.result||!p.result.event)return;
 var isT=p.about.isTopInning,inn=p.about.inning;
 if((side==='away'&&!isT)||(side==='home'&&isT))return;
-paSeq.push({id:p.matchup.batter.id,inn:inn});
+paSeq2.push({id:p.matchup.batter.id,inn:inn});
 });
-// First 9 unique = slots 1-9
-var slotMap={},slotIds=[];
-paSeq.forEach(function(pa){
-if(!slotMap[pa.id]&&slotIds.length<9){slotIds.push(pa.id);slotMap[pa.id]=slotIds.length;}
-});
-// For each PA after starters are set, if new batter appears, find which slot they took
-var cyclePos=0;
-var seen={};
-paSeq.forEach(function(pa){
-if(!seen[pa.id]){
-seen[pa.id]=true;
-if(!slotMap[pa.id]){
-// Sub — figure out slot: this batter appeared where slot X was expected
-var expectedSlot=(cyclePos%9)+1;
-var replacedId=slotIds[expectedSlot-1];
-var replacedB=bm[replacedId];
-subInfo[pa.id]={slot:expectedSlot,replaced:replacedB?replacedB.name:'?',inn:pa.inn};
-slotMap[pa.id]=expectedSlot;
-slotIds[expectedSlot-1]=pa.id;
-}}
-cyclePos++;
-});
+var slotMap2={},slotIds2=[];
+paSeq2.forEach(function(pa){if(!slotMap2[pa.id]&&slotIds2.length<9){slotIds2.push(pa.id);slotMap2[pa.id]=slotIds2.length;}});
+var cyc=0,seen2={};
+paSeq2.forEach(function(pa){
+if(!seen2[pa.id]){seen2[pa.id]=true;
+if(!slotMap2[pa.id]){
+var es=(cyc%9)+1;var repId=slotIds2[es-1];
+subInfo[pa.id]={slot:es,inn:pa.inn};
+slotMap2[pa.id]=es;slotIds2[es-1]=pa.id;
+}}cyc++;});
 }
+// Build 9 lineup slots — subs merge into the starter's row
+var slots=[];// [{starter:{id,name,pos,num}, sub:{id,name,pos,num,inn}|null}]
+var starters=os.slice(0,9);
+starters.forEach(function(pid){
+var b=bm[pid];if(!b){var pd=pl['ID'+pid]||{};b={id:pid,name:pd.person&&pd.person.fullName||'?',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};}
+slots.push({starter:b,sub:null});
+});
+// Map subs to their slot
+for(var sk in subInfo){
+var si3=subInfo[sk];
+var slotIdx=si3.slot-1;
+if(slotIdx>=0&&slotIdx<9){
+var sb=bm[sk];if(!sb){var pd2=pl['ID'+sk]||{};sb={id:parseInt(sk),name:pd2.person&&pd2.person.fullName||'?',pos:pd2.position&&pd2.position.abbreviation||'',num:pd2.jerseyNumber||'',ab:{}};}
+slots[slotIdx].sub={id:sb.id,name:sb.name,pos:sb.pos,num:sb.num,ab:sb.ab,inn:si3.inn};
+}}
 var opIds=od.pitchers||[];
 var wx=gd.weather||{},venue=gd.venue&&gd.venue.name||'',ds=gd.datetime&&gd.datetime.officialDate||'';
 var st=gd.datetime&&gd.datetime.time?(gd.datetime.time+' '+(gd.datetime.ampm||'')):'';
@@ -273,30 +274,48 @@ h+='<tr><td>'+(wx.temp?wx.temp+'\u00B0F, '+(wx.condition||''):'\u2014')+'</td><t
 // Toggle
 h+='<div class="toggle"><button class="'+(side==='away'?'active':'inactive')+'" onclick="setTeam(\'away\')">'+aw.abbreviation+' (Batting)</button><button class="'+(side==='home'?'active':'inactive')+'" onclick="setTeam(\'home\')">'+ho.abbreviation+' (Batting)</button></div>';
 // Grid
-h+='<table class="sb"><thead><tr><th style="width:28px">#</th><th style="width:120px;text-align:left;padding-left:4px">BATTER</th>';
+h+='<table class="sb"><thead><tr><th style="width:28px">#</th><th style="width:140px;text-align:left;padding-left:4px">BATTER</th>';
 for(var i=1;i<=ti;i++)h+='<th style="width:82px;font-size:15px">'+i+'</th>';
 for(var si2=0;si2<sc.length;si2++)h+='<th style="width:28px;font-size:10px">'+sc[si2]+'</th>';
 h+='</tr></thead><tbody>';
-order.forEach(function(pid,idx){
-var b=bm[pid];if(!b){var pd=pl['ID'+pid]||{};b={id:pid,name:pd.person&&pd.person.fullName||'\u2014',pos:pd.position&&pd.position.abbreviation||'',num:pd.jerseyNumber||'',ab:{}};}
-var ps=pl['ID'+pid],bt=ps&&ps.stats&&ps.stats.batting||{};
-// Substitution label
-var si3=subInfo[pid];
-var subHTML=si3?'<div style="font-size:7px;color:#c02020;margin-top:1px">\u21B3 for '+si3.replaced+' (inn '+si3.inn+')</div>':'';
-var slotNum=si3?si3.slot:(idx<9?idx+1:idx+1);
-h+='<tr'+(si3?' style="background:#fff8f8"':'')+'><td style="text-align:center;vertical-align:middle;font-size:14px;font-weight:bold">'+slotNum+'</td>';
-h+='<td style="padding:2px 4px;vertical-align:top"><div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+b.name+'</div><div style="font-size:8px">'+b.pos+(b.num?' #'+b.num:'')+'</div>'+subHTML+'</td>';
+slots.forEach(function(slot,idx){
+var s0=slot.starter,s1=slot.sub;
+// Combine stats from both players for the totals
+var s0ps=pl['ID'+s0.id],s1ps=s1?pl['ID'+s1.id]:null;
+var s0bt=s0ps&&s0ps.stats&&s0ps.stats.batting||{};
+var s1bt=s1ps&&s1ps.stats&&s1ps.stats.batting||{};
+var combAB=(s0bt.atBats||0)+(s1bt.atBats||0);
+var combH=(s0bt.hits||0)+(s1bt.hits||0);
+var combBB=(s0bt.baseOnBalls||0)+(s1bt.baseOnBalls||0);
+var combSO=(s0bt.strikeOuts||0)+(s1bt.strikeOuts||0);
+var combR=(s0bt.runs||0)+(s1bt.runs||0);
+var combRBI=(s0bt.rbi||0)+(s1bt.rbi||0);
+var combE=(s0bt.errors||0)+(s1bt.errors||0);
+// Name column — show starter + sub if exists
+var nameHTML='<div style="font-size:11px;font-weight:bold;text-transform:uppercase">'+s0.name+'</div><div style="font-size:8px">'+s0.pos+(s0.num?' #'+s0.num:'')+'</div>';
+if(s1)nameHTML+='<div style="font-size:9px;font-weight:bold;text-transform:uppercase;color:#2A6CB6;margin-top:2px;border-top:1px solid #ccc;padding-top:1px">'+s1.name+'</div><div style="font-size:7px;color:#2A6CB6">'+s1.pos+(s1.num?' #'+s1.num:'')+' (inn '+s1.inn+')</div>';
+h+='<tr><td style="text-align:center;vertical-align:middle;font-size:14px;font-weight:bold">'+(idx+1)+'</td>';
+h+='<td style="padding:2px 4px;vertical-align:top;width:140px">'+nameHTML+'</td>';
 for(var inn=1;inn<=ti;inn++){
-var abs=b.ab[inn];
-if(abs&&abs.length>0){var a=abs[0];
+// Check starter first, then sub
+var sAbs=s0.ab[inn];
+var subAbs=s1&&s1.ab[inn];
+if(sAbs&&sAbs.length>0){var a=sAbs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
 h+=dsvg(a.b,a);
 h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
 if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
 h+='</td>';
+}else if(subAbs&&subAbs.length>0){var a2=subAbs[0];
+// Sub's at-bat — baby blue background
+h+='<td class="inn-cell'+(a2.b&&a2.b.home?' score-cell':'')+'" style="'+(!(a2.b&&a2.b.home)?'background:#E0F0FF':'')+'">';
+h+=dsvg(a2.b,a2);
+h+='<div class="cell-nota '+a2.t+'">'+a2.n+'</div>';
+if(a2.rbi>0)h+='<div class="cell-rbi">'+a2.rbi+'RBI</div>';
+h+='</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
 }
-h+='<td class="stat-col">'+(bt.atBats||'')+'</td><td class="stat-col">'+(bt.hits||'')+'</td><td class="stat-col">'+(bt.baseOnBalls||'')+'</td><td class="stat-col">'+(bt.strikeOuts||'')+'</td><td class="stat-col">'+(bt.runs||'')+'</td><td class="stat-col">'+(bt.rbi||'')+'</td><td class="stat-col">'+(bt.errors||'')+'</td></tr>';
+h+='<td class="stat-col">'+(combAB||'')+'</td><td class="stat-col">'+(combH||'')+'</td><td class="stat-col">'+(combBB||'')+'</td><td class="stat-col">'+(combSO||'')+'</td><td class="stat-col">'+(combR||'')+'</td><td class="stat-col">'+(combRBI||'')+'</td><td class="stat-col">'+(combE||'')+'</td></tr>';
 });
 // Summary
 sl.forEach(function(lb,ri){var rc=lb==='RUNS'?' sum-runs':'';
