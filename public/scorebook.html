@@ -25,12 +25,9 @@ a{color:#000}
 .inn-cell.score-cell{background:#d4edda}
 .stat-col{width:28px;text-align:center;font-size:12px;font-weight:bold;vertical-align:middle}
 .sum-runs{color:#c02020}
-.cell-nota{position:absolute;left:65px;top:37px;transform:translate(-50%,-50%);font-size:14px;font-weight:900;z-index:1}
-.cell-nota.hit{color:#2a8a2a}.cell-nota.hr{color:#2a8a2a}.cell-nota.out{color:#c02020}.cell-nota.walk{color:#2A6CB6}.cell-nota.error{color:#BA7517}
 .cell-pc{display:none}
 .cell-seq{position:absolute;left:2px;top:11px;font-size:6.5px;font-family:'Courier Prime',monospace;line-height:1.5;z-index:1;color:#333}
 .cell-seq .ps-b{color:#1a7a1a}.cell-seq .ps-s{color:#c02020}.cell-seq .ps-f{color:#888}.cell-seq .ps-x{color:#000;font-weight:bold}
-.cell-rbi{position:absolute;right:2px;top:11px;font-size:7px;font-weight:bold;color:#c02020;z-index:1}
 .cell-count{position:absolute;left:3px;bottom:2px;font-family:'Courier Prime',monospace;text-align:center}
 .cell-count .lbl{font-size:6px;font-weight:bold;color:#555}
 .cell-count .val{font-size:9px;font-weight:bold}
@@ -119,6 +116,15 @@ var endY=Bo.y-Math.cos(ang)*lineLen;
 var tCol=play.t==='hr'?'#DAA520':play.t==='hit'?'#2a8a2a':play.t==='error'?'#BA7517':'#c02020';
 s+='<line x1="'+Bo.x+'" y1="'+Bo.y+'" x2="'+endX.toFixed(1)+'" y2="'+endY.toFixed(1)+'" stroke="'+tCol+'" stroke-width="2" stroke-dasharray="3 2" opacity="0.8"/>';
 s+='<circle cx="'+endX.toFixed(1)+'" cy="'+endY.toFixed(1)+'" r="2.5" fill="'+tCol+'" opacity="0.9"/>';
+}
+// Result notation centered on diamond
+if(play&&play.n){
+var nCol=play.t==='hit'||play.t==='hr'?'#2a8a2a':play.t==='walk'?'#2A6CB6':play.t==='error'?'#BA7517':'#c02020';
+s+='<text x="'+cx+'" y="'+(cy+1)+'" text-anchor="middle" dominant-baseline="central" fill="'+nCol+'" font-size="14" font-weight="900" font-family="Arial">'+play.n+'</text>';
+}
+// RBI badge
+if(play&&play.rbi>0){
+s+='<text x="'+(CW-2)+'" y="'+(CH-2)+'" text-anchor="end" fill="#c02020" font-size="7" font-weight="bold" font-family="Arial">'+play.rbi+'RBI</text>';
 }
 s+='</svg>';return s;
 }
@@ -319,16 +325,12 @@ if(sAbs&&sAbs.length>0){var a=sAbs[0];
 h+='<td class="inn-cell'+(a.b&&a.b.home?' score-cell':'')+'">';
 h+='<div style="position:absolute;right:0;top:0">'+dsvg(a.b,a)+'</div>';
 h+=rseq(a.seq);
-h+='<div class="cell-nota '+a.t+'">'+a.n+'</div>';
-if(a.rbi>0)h+='<div class="cell-rbi">'+a.rbi+'RBI</div>';
 h+=rcnt(a);
 h+='</td>';
 }else if(subAbs&&subAbs.length>0){var a2=subAbs[0];
 h+='<td class="inn-cell'+(a2.b&&a2.b.home?' score-cell':'')+'" style="'+(!(a2.b&&a2.b.home)?'background:#E0F0FF':'')+'">';
 h+='<div style="position:absolute;right:0;top:0">'+dsvg(a2.b,a2)+'</div>';
 h+=rseq(a2.seq);
-h+='<div class="cell-nota '+a2.t+'">'+a2.n+'</div>';
-if(a2.rbi>0)h+='<div class="cell-rbi">'+a2.rbi+'RBI</div>';
 h+=rcnt(a2);
 h+='</td>';
 }else{h+='<td class="inn-cell dead"></td>';}
