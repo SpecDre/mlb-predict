@@ -7,8 +7,14 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F5F3EE;--sf:#FFF;--sf2:#E4E7EB;--tx:#1A1A18;--tx2:#5A6170;--tx3:#8B909A;--acc:#BA7517;--accL:#FAEEDA;--grn:#4A8C1C;--grnB:#EAF3DE;--red:#C43028;--redB:#FCEBEB;--blu:#2A6CB6;--bluB:#E6F1FB;--pur:#6B5BC0;--purB:#EEEDFE;--teal:#0F6E56;--tealB:#E1F5EE;--brd:rgba(0,0,0,.08);--r:10px;--rl:14px}
-@media(prefers-color-scheme:dark){:root{--bg:#1A1A1A;--sf:#252525;--sf2:#2E2E2E;--tx:#E5E5E5;--tx2:#999;--tx3:#666;--acc:#EAB308;--accL:#2E2500;--grn:#68D391;--grnB:#162B18;--red:#F09595;--redB:#351818;--blu:#85B7EB;--bluB:#152535;--pur:#AFA9EC;--purB:#26215C;--teal:#5DCAA5;--tealB:#0A302A;--brd:rgba(255,255,255,.10)}
-.gc-hd{background:#333}}
+@media(prefers-color-scheme:dark){:root{--bg:#E5E8ED;--sf:#EEF0F4;--sf2:#D5D9E0;--tx:#1E2A3A;--tx2:#506070;--tx3:#8896A6;--acc:#9A6400;--accL:#FDF2D8;--grn:#2E7D32;--grnB:#E3F0E3;--red:#C43028;--redB:#FCE8E8;--blu:#1A5FA5;--bluB:#E2EEF8;--pur:#534AB7;--purB:#EDEDFE;--teal:#0F6E56;--tealB:#DFF2EA;--brd:rgba(0,0,0,.10)}
+.gc-hd{background:#D5D9E0}
+.st-live{background:rgba(196,48,40,0.85);color:#FFF}
+.st-final{background:rgba(30,42,58,0.15);color:#1E2A3A}
+.st-pre{background:rgba(30,42,58,0.15);color:#1E2A3A}
+.pred-correct{background:rgba(46,125,50,0.85);color:#FFF}
+.pred-wrong{background:rgba(196,48,40,0.85);color:#FFF}
+.gc-hd .tm-logo{filter:none}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 .app{max-width:880px;margin:0 auto;padding:20px 16px 100px}
@@ -38,6 +44,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .gc-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#4A6D8C;border-bottom:none;flex-wrap:wrap;gap:6px}
 .gc-hd .tm{color:#FFF}
 .gc-hd .vs_{color:#B8D0E2}
+@media(prefers-color-scheme:dark){.gc-hd .tm{color:#1E2A3A}.gc-hd .vs_{color:#6A7A8A}}
 .tm{font-size:15px;font-weight:700}.vs_{font-size:11px;color:var(--tx3)}
 
 /* Team logo */
@@ -254,7 +261,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 /* Drought tags */
 .drought-tag{display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:4px;margin-left:4px;vertical-align:middle}
 .tag-dinger{background:#FFF3E0;color:#E65100;border:1px solid #FFB74D}
-@media(prefers-color-scheme:dark){.tag-dinger{background:#332800;color:#FFB74D;border-color:#5C4000}}
+@media(prefers-color-scheme:dark){.tag-dinger{background:#FFF3E0;color:#E65100;border-color:#FFB74D}}
 .tag-slump{background:var(--sf2);color:var(--tx3);border:1px solid var(--brd)}
 
 /* Model version badge */
