@@ -40,6 +40,14 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .gc-hd .vs_{color:#B8D0E2}
 .tm{font-size:15px;font-weight:700}.vs_{font-size:11px;color:var(--tx3)}
 
+/* Team logo */
+.tm-logo{width:22px;height:22px;object-fit:contain;vertical-align:middle;flex-shrink:0}
+.tm-logo-sm{width:16px;height:16px;object-fit:contain;vertical-align:middle}
+.tm-logo-lg{width:32px;height:32px;object-fit:contain;vertical-align:middle}
+.tm-logo-xl{width:40px;height:40px;object-fit:contain}
+.gc-hd .tm-logo{filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+.wp-tm .tm-logo-lg{margin-bottom:2px}
+
 /* Status badges */
 .st-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
 .st-live{background:rgba(196,48,40,0.9);color:#FFF}
@@ -79,7 +87,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 
 /* Final score display */
 .final-score{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd)}
-.final-tm{display:flex;align-items:center;gap:10px}
+.final-tm{display:flex;align-items:center;gap:8px}
 .final-abbr{font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif}
 .final-abbr.winner{color:var(--grn)}
 .final-abbr.loser{color:var(--tx3)}
@@ -107,7 +115,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .gc-verdict{margin:4px 16px 12px;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;border-left:3px solid var(--acc);background:var(--sf2);color:var(--tx2)}
 
 /* Batter row */
-.slb{padding:6px 16px 3px;font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--brd)}
+.slb{padding:6px 16px 3px;font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:6px}
 .br{display:flex;align-items:center;padding:8px 16px;gap:8px;cursor:pointer}
 .br:hover{background:var(--sf2)}
 .brk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
@@ -268,7 +276,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .acc-30 .a30-bar{flex:1;min-width:100px;height:6px;border-radius:3px;background:var(--sf2);overflow:hidden}
 .acc-30 .a30-fill{height:100%;border-radius:3px;background:var(--grn)}
 
-@media(max-width:600px){.wp-abbr{font-size:18px}.wp-pct{font-size:22px}.wp-tm{padding:10px 8px}.wp-vs{width:30px;font-size:10px}h1{font-size:22px}.lt-inn{width:20px;font-size:10px}.lt-rhe-val{width:24px;font-size:12px}.inn-board{overflow-x:auto}.acc-30{font-size:11px}}
+@media(max-width:600px){.wp-abbr{font-size:18px}.wp-pct{font-size:22px}.wp-tm{padding:10px 8px}.wp-vs{width:30px;font-size:10px}h1{font-size:22px}.lt-inn{width:20px;font-size:10px}.lt-rhe-val{width:24px;font-size:12px}.inn-board{overflow-x:auto}.acc-30{font-size:11px}.tm-logo-lg{width:26px;height:26px}.tm-logo-xl{width:32px;height:32px}}
 </style>
 </head>
 <body>
@@ -318,6 +326,20 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
   <div id="out"></div>
 </div>
 <script>
+// ===== Team Logo Helper =====
+var LOGO_MAP={
+  // ESPN CDN abbreviation overrides (most are lowercase of the MLB abbrev)
+  'CWS':'chw','AZ':'ari','WSH':'wsh'
+};
+function logoUrl(abbr){
+  var key=(LOGO_MAP[abbr]||abbr).toLowerCase();
+  return 'https://a.espncdn.com/i/teamlogos/mlb/500/'+key+'.png';
+}
+function teamLogo(abbr,cls){
+  cls=cls||'tm-logo';
+  return '<img src="'+logoUrl(abbr)+'" alt="'+abbr+'" class="'+cls+'" loading="lazy" onerror="this.style.display=\'none\'">';
+}
+
 var mode='game',sub_='main',currentDate=new Date(),data=null,liveScores={},refreshTimer=null;
 var dateStr=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 var fTime=function(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})};
@@ -334,7 +356,6 @@ function saveAccuracy(acc){
 function recordDayResults(dateKey,results){
   var acc=loadAccuracy();
   acc[dateKey]=results;
-  // Prune entries older than 45 days
   var cutoff=new Date();cutoff.setDate(cutoff.getDate()-45);
   var cutStr=dateStr(cutoff);
   for(var k in acc){if(k<cutStr)delete acc[k];}
@@ -363,7 +384,6 @@ function render30DayBar(){
     +'</div>';
 }
 function tryRecordAccuracy(){
-  // Check if current date has all final results, record them
   if(!data||!data.gamePreds)return;
   var dk=dateStr(currentDate);
   var correct=0,wrong=0,pending=0;
@@ -373,7 +393,7 @@ function tryRecordAccuracy(){
     if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
     var predicted=gp.pred.aProb>=50?gp.away:gp.home;
     var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
-    if(actual==='TIE')return; // spring training ties — don't count
+    if(actual==='TIE')return;
     if(predicted===actual)correct++;else wrong++;
   });
   if(correct+wrong>0){
@@ -400,39 +420,23 @@ function tCol(t){return t==='f'?'var(--grn)':t==='h'?'var(--teal)':t==='o'?'var(
 
 function getLiveData(gamePk){return liveScores[gamePk]||null}
 
-// Live win probability based on score, inning, outs
 function calcLiveWP(preAwayProb, awayScore, homeScore, inning, isTopInning, outs) {
   if (!inning || inning < 1) return { away: preAwayProb, home: 100 - preAwayProb };
-  
-  // Innings remaining (fractional based on half-inning and outs)
   var halfInningsLeft = (9 - inning) * 2;
-  if (isTopInning) halfInningsLeft += 1; // haven't finished this half yet
-  halfInningsLeft += (3 - (outs || 0)) / 3; // partial outs in current half-inning
+  if (isTopInning) halfInningsLeft += 1;
+  halfInningsLeft += (3 - (outs || 0)) / 3;
   halfInningsLeft = Math.max(halfInningsLeft, 0.1);
   var inningsLeft = halfInningsLeft / 2;
-  
-  // Run differential from away team perspective (positive = away leading)
   var runDiff = awayScore - homeScore;
-  
-  // Score-based win probability using sigmoid scaled by innings remaining
-  // More innings left = less certain, fewer innings = more decisive
-  var k = 1.4; // calibration constant
+  var k = 1.4;
   var z = runDiff * k / Math.sqrt(Math.max(inningsLeft, 0.3));
-  var scoreWP = 1 / (1 + Math.exp(-z)); // away team win prob from score alone
-  
-  // Home team advantage when tied or close (they bat last)
+  var scoreWP = 1 / (1 + Math.exp(-z));
   if (Math.abs(runDiff) <= 1 && !isTopInning) scoreWP -= 0.03;
-  
-  // Blend: early innings lean on pre-game, late innings lean on score
   var leverage = Math.min(1, 1 - (inningsLeft / 9));
-  leverage = Math.max(0.15, leverage); // even in 1st inning, score matters a little
-  
+  leverage = Math.max(0.15, leverage);
   var preAway = preAwayProb / 100;
   var liveAway = scoreWP * leverage + preAway * (1 - leverage);
-  
-  // Clamp
   liveAway = Math.max(0.02, Math.min(0.98, liveAway));
-  
   return {
     away: Math.round(liveAway * 100),
     home: Math.round((1 - liveAway) * 100)
@@ -456,8 +460,8 @@ function renderLinescore(live, gp){
   var maxInn=Math.max(innings.length,9);
 
   var hdr='<tr><th class="tm-cell"></th>';
-  var aRow='<tr class="'+(awayWon?'winner-row':'')+'"><td class="tm-cell" style="'+(awayWon?'color:var(--grn)':homeWon?'color:var(--tx3)':'')+'">'+gp.away+'</td>';
-  var hRow='<tr class="'+(homeWon?'winner-row':'')+'"><td class="tm-cell" style="'+(homeWon?'color:var(--grn)':awayWon?'color:var(--tx3)':'')+'">'+gp.home+'</td>';
+  var aRow='<tr class="'+(awayWon?'winner-row':'')+'"><td class="tm-cell" style="'+(awayWon?'color:var(--grn)':homeWon?'color:var(--tx3)':'')+'">'+teamLogo(gp.away,'tm-logo-sm')+' '+gp.away+'</td>';
+  var hRow='<tr class="'+(homeWon?'winner-row':'')+'"><td class="tm-cell" style="'+(homeWon?'color:var(--grn)':awayWon?'color:var(--tx3)':'')+'">'+teamLogo(gp.home,'tm-logo-sm')+' '+gp.home+'</td>';
   for(var i=0;i<maxInn;i++){
     hdr+='<th>'+(i+1)+'</th>';
     var inn=innings[i];
@@ -515,8 +519,6 @@ function renderLinescore(live, gp){
     lastPlayHTML='<div class="last-play"><span class="lp-inn">'+live.lastPlay.inning+'</span><b>'+(live.lastPlay.event||'')+'</b> '+live.lastPlay.desc+'</div>';
   }
 
-  // Live WP shift display removed — now handled by calcLiveWP in the main game card
-
   var pcHTML='';
   if((isLive||isFinal)&&(live.awayPitchCount>0||live.homePitchCount>0)){
     pcHTML='<div class="pc-bar"><span>'+gp.away+' SP: '+(live.awayPitchCount||'-')+' pitches</span><span>'+gp.home+' SP: '+(live.homePitchCount||'-')+' pitches</span></div>';
@@ -573,19 +575,19 @@ function renderGameCard(gp){
     var gameTied=live.awayScore===live.homeScore;
     if(gameTied){
       scoreSection='<div class="final-score">'
-        +'<div class="final-tm"><span class="final-abbr">'+gp.awayName+'</span><span class="final-tag" style="background:var(--tx3);color:#fff">T</span></div>'
+        +'<div class="final-tm">'+teamLogo(gp.away,'tm-logo-lg')+' <span class="final-abbr">'+gp.awayName+'</span><span class="final-tag" style="background:var(--tx3);color:#fff">T</span></div>'
         +'<div class="final-runs">'+live.awayScore+'</div>'
         +'<div class="final-vs">-</div>'
         +'<div class="final-runs">'+live.homeScore+'</div>'
-        +'<div class="final-tm"><span class="final-tag" style="background:var(--tx3);color:#fff">T</span><span class="final-abbr">'+gp.homeName+'</span></div>'
+        +'<div class="final-tm"><span class="final-tag" style="background:var(--tx3);color:#fff">T</span><span class="final-abbr">'+gp.homeName+'</span> '+teamLogo(gp.home,'tm-logo-lg')+'</div>'
         +'</div>';
     } else {
       scoreSection='<div class="final-score">'
-        +'<div class="final-tm"><span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.awayName+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
+        +'<div class="final-tm">'+teamLogo(gp.away,'tm-logo-lg')+' <span class="final-abbr '+(awayWon?'winner':'loser')+'">'+gp.awayName+'</span>'+(awayWon?'<span class="final-tag tag-w">W</span>':'<span class="final-tag tag-l">L</span>')+'</div>'
         +'<div class="final-runs '+(awayWon?'winner':'loser')+'">'+live.awayScore+'</div>'
         +'<div class="final-vs">-</div>'
         +'<div class="final-runs '+(awayWon?'loser':'winner')+'">'+live.homeScore+'</div>'
-        +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.homeName+'</span></div>'
+        +'<div class="final-tm">'+(awayWon?'<span class="final-tag tag-l">L</span>':'<span class="final-tag tag-w">W</span>')+'<span class="final-abbr '+(awayWon?'loser':'winner')+'">'+gp.homeName+'</span> '+teamLogo(gp.home,'tm-logo-lg')+'</div>'
         +'</div>';
     }
   }
@@ -604,12 +606,12 @@ function renderGameCard(gp){
     if(awayB.length){
       var awayOpp=awayB[0].oppP||'TBD';
       var awayH=awayB[0].oppPHand||'';
-      batterSection+='<div class="slb">'+gp.away+' vs '+awayOpp+(awayH?' '+handBadge(awayH):'')+'</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
+      batterSection+='<div class="slb">'+teamLogo(gp.away,'tm-logo-sm')+' '+gp.away+' vs '+awayOpp+(awayH?' '+handBadge(awayH):'')+'</div>'+awayB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
     }
     if(homeB.length){
       var homeOpp=homeB[0].oppP||'TBD';
       var homeH=homeB[0].oppPHand||'';
-      batterSection+='<div class="slb">'+gp.home+' vs '+homeOpp+(homeH?' '+handBadge(homeH):'')+'</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
+      batterSection+='<div class="slb">'+teamLogo(gp.home,'tm-logo-sm')+' '+gp.home+' vs '+homeOpp+(homeH?' '+handBadge(homeH):'')+'</div>'+homeB.map(function(b,i){return renderBatter(b,i,mode,isFinal)}).join('');
     }
   } else if(mode!=='game'&&!awayB.length){
     batterSection='<div style="padding:16px;text-align:center;font-size:12px;color:var(--tx3)">Lineups not yet available</div>';
@@ -672,12 +674,12 @@ function renderGameCard(gp){
       var liveWP=calcLiveWP(p.aProb, live.awayScore, live.homeScore, live.inning, live.isTopInning, live.outs);
       var liveAWin=liveWP.away>=50;
       gameContent=liveBoard
-        +'<div class="wp-row"><div class="wp-tm '+(liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(liveAWin?'hi':'lo')+'">'+liveWP.away+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.aProb+'%</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!liveAWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!liveAWin?'hi':'lo')+'">'+liveWP.home+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.hProb+'%</div></div></div>'
+        +'<div class="wp-row"><div class="wp-tm '+(liveAWin?'fav':'')+'">'+teamLogo(gp.away,'tm-logo-lg')+'<div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(liveAWin?'hi':'lo')+'">'+liveWP.away+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.aProb+'%</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!liveAWin?'fav':'')+'">'+teamLogo(gp.home,'tm-logo-lg')+'<div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!liveAWin?'hi':'lo')+'">'+liveWP.home+'%</div><div class="wp-lbl">Live</div><div style="font-size:10px;color:var(--tx3);margin-top:1px">Pre: '+p.hProb+'%</div></div></div>'
         +'<div class="wp-bar"><div style="width:'+liveWP.away+'%;background:'+(liveAWin?'#2A6CB6':'#8B909A')+';transition:width 0.5s ease"></div><div style="width:'+liveWP.home+'%;background:'+(!liveAWin?'#0F6E56':'#8B909A')+';transition:width 0.5s ease"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +pythHTML+wxHTML;
     } else {
-      gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'"><div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'"><div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
+      gameContent='<div class="wp-row"><div class="wp-tm '+(aWin?'fav':'')+'">'+teamLogo(gp.away,'tm-logo-lg')+'<div class="wp-abbr">'+gp.away+'</div><div class="wp-rec">'+gp.aRec+'</div><div class="wp-pct '+(aWin?'hi':'lo')+'">'+p.aProb+'%</div><div class="wp-lbl">Win prob</div></div><div class="wp-vs">VS</div><div class="wp-tm '+(!aWin?'fav':'')+'">'+teamLogo(gp.home,'tm-logo-lg')+'<div class="wp-abbr">'+gp.home+'</div><div class="wp-rec">'+gp.hRec+'</div><div class="wp-pct '+(!aWin?'hi':'lo')+'">'+p.hProb+'%</div><div class="wp-lbl">Win prob</div></div></div>'
         +'<div class="wp-bar"><div style="width:'+p.aProb+'%;background:'+(aWin?'#2A6CB6':'#8B909A')+'"></div><div style="width:'+p.hProb+'%;background:'+(!aWin?'#0F6E56':'#8B909A')+'"></div></div>'
         +'<div class="gc-pit"><div><span style="font-size:9px;color:var(--tx3)">SP</span> '+aSPDisplay+' ('+p.det.aERA+' ERA)'+aFB+'</div><div style="font-size:10px;color:var(--tx3)">'+gp.venue+'</div><div>'+hSPDisplay+' ('+p.det.hERA+' ERA)'+hFB+' <span style="font-size:9px;color:var(--tx3)">SP</span></div></div>'
         +v3HTML+pythHTML+wxHTML
@@ -685,11 +687,11 @@ function renderGameCard(gp){
     }
   } else {
     if(isLive){
-      gameContent='<div class="compact-score"><span class="cs-live">&#9679; LIVE '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span><span class="cs-scores">'+gp.away+' '+live.awayScore+' - '+gp.home+' '+live.homeScore+'</span></div>';
+      gameContent='<div class="compact-score"><span class="cs-live">&#9679; LIVE '+(live.isTopInning?'Top':'Bot')+' '+live.inning+'</span><span class="cs-scores">'+teamLogo(gp.away,'tm-logo-sm')+' '+gp.away+' '+live.awayScore+' - '+gp.home+' '+live.homeScore+' '+teamLogo(gp.home,'tm-logo-sm')+'</span></div>';
     }
   }
 
-  return '<div class="gc"><div class="gc-hd"><div style="display:flex;align-items:center;gap:8px"><span class="tm">'+gp.away+'</span><span class="vs_">@</span><span class="tm">'+gp.home+'</span></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'+statusHTML+'</div></div>'
+  return '<div class="gc"><div class="gc-hd"><div style="display:flex;align-items:center;gap:8px">'+teamLogo(gp.away)+' <span class="tm">'+gp.away+'</span><span class="vs_">@</span><span class="tm">'+gp.home+'</span> '+teamLogo(gp.home)+'</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'+statusHTML+'</div></div>'
     +gameContent+batterSection+'</div>';
 }
 
@@ -700,7 +702,6 @@ function renderBatter(b,idx,m,isFinal){
 
   var tierHTML='';
   if(m==='hr'){
-    // Show implied American odds instead of hype tags
     var pctNum=+pct;
     var impliedOdds=pctNum>0?Math.round((100-pctNum)/pctNum*100):9999;
     tierHTML='<span class="tier-label" style="background:var(--sf2);color:var(--tx2)">+'+impliedOdds+'</span>';
@@ -724,16 +725,13 @@ function renderBatter(b,idx,m,isFinal){
     resultHTML='<div class="game-line gl-pending">vs '+b.oppP+(b.oppPHand?' '+handBadge(b.oppPHand):'')+'</div>';
   }
 
-  // H2H detail
   var h2hH=b.h2h?'<div class="h2h-b"><strong>vs '+b.oppP+':</strong> '+b.h2h.ab+'AB, '+b.h2h.h+'H, '+b.h2h.hr+'HR (career)</div>':'';
 
-  // Platoon detail
   var platH='';
   if(b.platoon){
     platH='<div class="platoon-b"><strong>vs '+b.platoon.hand+'HP:</strong> .'+String(Math.round(parseFloat(b.platoon.avg)*1000)).padStart(3,'0')+' AVG, '+b.platoon.hrPA+'% HR/PA ('+b.platoon.pa+' PA)</div>';
   }
 
-  // Statcast detail
   var scH='';
   if(b.statcast){
     var sc=b.statcast;
@@ -745,7 +743,6 @@ function renderBatter(b,idx,m,isFinal){
       +'</div>';
   }
 
-  // Factor row in detail — show all factors including v3
   var fKey=m==='hr'?'hrF':'hitF';
   var f=b[fKey]||{};
   var factorHTML='<div style="margin-top:6px;font-size:10px;color:var(--tx3)">Factors: ';
@@ -768,10 +765,8 @@ function renderBatter(b,idx,m,isFinal){
   }
   factorHTML+='</div>';
 
-  // Lineup position badge
   var loBadge=b.lineupPos?'<span class="lo-badge'+(b.lineupPos<=4?' lo-top':'')+'">'+b.lineupPos+'</span>':'';
 
-  // Drought tag (DINGER INCOMING or SLUMP)
   var droughtHTML='';
   if(b.droughtTag){
     if(b.droughtTag.tag==='dingerIncoming'){
@@ -813,7 +808,7 @@ function renderRecordBar(){
       if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
       var predicted=gp.pred.aProb>=50?gp.away:gp.home;
       var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
-      if(actual==='TIE')return; // spring training ties — don't count
+      if(actual==='TIE')return;
       if(predicted===actual)correct++;else wrong++;
     });
     var total=correct+wrong;
@@ -863,7 +858,7 @@ function renderLB(m){
         var ok=fav===actual;
         resultHTML=' <span class="pred-result '+(ok?'pred-correct':'pred-wrong')+'" style="font-size:9px">'+(ok?'&#10003;':'&#10007;')+'</span>';
       }
-      h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+fav+' over '+dog+resultHTML+'</div><div class="lbsu">'+(live&&live.status==='Final'?'Final '+live.awayScore+'-'+live.homeScore:'Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1)+' | Pyth: '+(gp.pred.det.aPyth||'-')+'% vs '+(gp.pred.det.hPyth||'-')+'%')+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>';
+      h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div>'+teamLogo(fav,'tm-logo')+'<div class="lbi"><div class="lbna">'+fav+' over '+dog+resultHTML+'</div><div class="lbsu">'+(live&&live.status==='Final'?'Final '+live.awayScore+'-'+live.homeScore:'Pred: '+gp.pred.aRuns.toFixed(1)+'-'+gp.pred.hRuns.toFixed(1)+' | Pyth: '+(gp.pred.det.aPyth||'-')+'% vs '+(gp.pred.det.hPyth||'-')+'%')+'</div></div><div class="lbpv" style="color:'+(c>=65?'var(--grn)':c>=55?'var(--acc)':'var(--tx3)')+'">'+c+'%</div></div>';
     });
     return h+'</div>';
   }
@@ -878,7 +873,6 @@ function renderLB(m){
       var ok=m==='hr'?(b.gs.hr>0):(b.gs.h>0);
       resHTML=ok?'<span class="hr-badge '+(m==='hr'?'hr-yes':'hit-yes')+'">&#10003; '+(m==='hr'?b.gs.hr+' HR':b.gs.h+'-'+b.gs.ab)+'</span>':'<span class="hr-badge '+(m==='hr'?'hr-no':'hit-no')+'">'+b.gs.h+'-'+b.gs.ab+'</span>';
     }
-    // Build subtitle with platoon + statcast hints
     var sub=b.team+' vs '+b.oppP+(b.oppPHand?' ('+b.oppPHand+'HP)':'');
     if(m==='hr'){
       sub+=' &middot; '+b.totHR+'HR &middot; .'+String(Math.round((b.iso||0)*1000)).padStart(3,'0')+' ISO';
@@ -887,13 +881,12 @@ function renderLB(m){
       sub+=' &middot; .'+String(Math.round((b.avg||0)*1000)).padStart(3,'0')+' AVG';
       if(b.statcast&&b.statcast.xBA>0)sub+=' &middot; .'+String(Math.round(b.statcast.xBA*1000)).padStart(3,'0')+' xBA';
     }
-    // Drought tag for leaderboard
     var lbDrought='';
     if(b.droughtTag){
       if(b.droughtTag.tag==='dingerIncoming') lbDrought=' <span class="drought-tag tag-dinger">&#128165; DINGER INCOMING</span>';
       else if(b.droughtTag.tag==='slump') lbDrought=' <span class="drought-tag tag-slump">SLUMP</span>';
     }
-    h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div><div class="lbi"><div class="lbna">'+b.name+' '+resHTML+lbDrought+'</div><div class="lbsu">'+sub+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>';
+    h+='<div class="lbr"><div class="lbn '+(i<3?'t3':'')+'">'+(i+1)+'</div>'+teamLogo(b.team,'tm-logo')+'<div class="lbi"><div class="lbna">'+b.name+' '+resHTML+lbDrought+'</div><div class="lbsu">'+sub+'</div></div><div class="lbpv" style="color:'+tCol(t)+'">'+pct+'%</div></div>';
   });
   return h+'</div>';
 }
@@ -916,22 +909,18 @@ function render(){
   if(!data){el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';return}
   if(!data.gamePreds||!data.gamePreds.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use arrows to navigate</p></div>';return}
   renderRecordBar();
-  // Save open batter details before re-render
   var openIds=[];
   el.querySelectorAll('.bd.open').forEach(function(d){if(d.id)openIds.push(d.id)});
   if(sub_==='lb'){el.innerHTML=renderLB(mode);return}
-  // Sort: Live games top, upcoming middle, finished bottom
   var sorted=data.gamePreds.slice().sort(function(a,b){
     var la=liveScores[a.gamePk]||{};
     var lb_=liveScores[b.gamePk]||{};
     var sa=la.status==='Live'?0:la.status==='Final'?2:1;
     var sb=lb_.status==='Live'?0:lb_.status==='Final'?2:1;
     if(sa!==sb)return sa-sb;
-    // Within same status, keep original game time order
     return 0;
   });
   el.innerHTML=sorted.map(renderGameCard).join('');
-  // Restore open batter details after re-render
   openIds.forEach(function(id){var d=document.getElementById(id);if(d)d.classList.add('open')});
 }
 
