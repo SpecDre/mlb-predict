@@ -283,6 +283,38 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
 .acc-30 .a30-bar{flex:1;min-width:100px;height:6px;border-radius:3px;background:var(--sf2);overflow:hidden}
 .acc-30 .a30-fill{height:100%;border-radius:3px;background:var(--grn)}
 
+/* Track Record */
+.tr-tabs{display:flex;gap:4px;background:var(--sf2);border-radius:var(--r);padding:4px;margin-bottom:16px}
+.tr-tab{flex:1;padding:8px 6px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;background:transparent;color:var(--tx2);cursor:pointer;text-align:center}
+.tr-tab.act{background:var(--sf);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.tr-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.tr-metric{background:var(--sf);border:1px solid var(--brd);border-radius:var(--r);padding:14px 10px;text-align:center}
+.tr-metric-val{font-size:22px;font-weight:900;font-family:'Playfair Display',serif}
+.tr-metric-lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-top:2px}
+.tr-metric-sub{font-size:11px;color:var(--tx2);margin-top:1px}
+.tr-conf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.tr-conf{background:var(--sf);border:1px solid var(--brd);border-radius:var(--r);padding:10px;text-align:center}
+.tr-conf-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.tr-conf-val{font-size:18px;font-weight:900;font-family:'Playfair Display',serif}
+.tr-conf-sub{font-size:10px;color:var(--tx3);margin-top:1px}
+.tr-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);padding:10px 14px;background:var(--sf2);border-radius:var(--r) var(--r) 0 0;border:1px solid var(--brd);border-bottom:none;margin-top:16px}
+.tr-list{background:var(--sf);border:1px solid var(--brd);border-radius:0 0 var(--r) var(--r);overflow:hidden}
+.tr-item{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid var(--brd);font-size:13px}
+.tr-item:last-child{border-bottom:none}
+.tr-item-info{flex:1;min-width:0}
+.tr-item-main{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-item-sub{font-size:11px;color:var(--tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-item-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;flex-shrink:0}
+.tr-hit{background:var(--grnB);color:var(--grn)}
+.tr-miss{background:var(--redB);color:var(--red)}
+.tr-reset{font-size:11px;color:var(--tx3);background:var(--sf2);border:1px solid var(--brd);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.tr-reset:hover{color:var(--red)}
+.tr-empty{text-align:center;padding:40px 20px;color:var(--tx3);font-size:13px}
+.tr-streak{font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:6px}
+.tr-streak-w{background:var(--grnB);color:var(--grn)}
+.tr-streak-l{background:var(--redB);color:var(--red)}
+@media(max-width:600px){.tr-metrics{grid-template-columns:repeat(2,1fr)}.tr-conf-grid{grid-template-columns:repeat(2,1fr)}.tr-metric-val{font-size:18px}}
+
 @media(max-width:600px){.wp-abbr{font-size:18px}.wp-pct{font-size:22px}.wp-tm{padding:10px 8px}.wp-vs{width:30px;font-size:10px}h1{font-size:22px}.lt-inn{width:20px;font-size:10px}.lt-rhe-val{width:24px;font-size:12px}.inn-board{overflow-x:auto}.acc-30{font-size:11px}.tm-logo-lg{width:26px;height:26px}.tm-logo-xl{width:32px;height:32px}}
 </style>
 </head>
@@ -324,6 +356,7 @@ h1{font-family:'Playfair Display',serif;font-weight:900;font-size:26px;letter-sp
     <button class="mbtn act" data-m="game" onclick="setMode('game')">&#9918; Games <span class="mbdg bdg-g" id="bg">-</span></button>
     <button class="mbtn" data-m="hr" onclick="setMode('hr')">&#128163; HR <span class="mbdg bdg-hr" id="bhr">-</span></button>
     <button class="mbtn" data-m="hit" onclick="setMode('hit')">&#128165; Hits <span class="mbdg bdg-h" id="bht">-</span></button>
+    <button class="mbtn" data-m="record" onclick="setMode('record')">&#128202; Record</button>
   </div>
   <div class="stabs">
     <button class="stab act" data-s="main" onclick="setSub('main')">By game</button>
@@ -407,6 +440,240 @@ function tryRecordAccuracy(){
     recordDayResults(dk,{correct:correct,wrong:wrong});
     render30DayBar();
   }
+  trackRecordStore(dk);
+}
+
+// ===== Track Record Storage =====
+var TRACK_KEY='mlbpredict_track_v1';
+function loadTrack(){try{return JSON.parse(localStorage.getItem(TRACK_KEY))||{games:[],hr:[],hits:[]};}catch(e){return{games:[],hr:[],hits:[]};}}
+function saveTrack(t){try{localStorage.setItem(TRACK_KEY,JSON.stringify(t));}catch(e){}}
+function resetTrack(){localStorage.removeItem(TRACK_KEY);}
+
+function trackRecordStore(dk){
+  if(!data)return;
+  var t=loadTrack();
+  var existingGameKeys=new Set(t.games.map(function(g){return g.key}));
+  var existingBatterKeys=new Set(t.hr.map(function(b){return b.key}).concat(t.hits.map(function(b){return b.key})));
+
+  // Store game predictions
+  if(data.gamePreds){
+    data.gamePreds.forEach(function(gp){
+      var key=dk+'_'+gp.gamePk;
+      if(existingGameKeys.has(key))return;
+      var live=getLiveData(gp.gamePk);
+      if(!live||live.status!=='Final')return;
+      if(live.awayScore===0&&live.homeScore===0&&(live.awayHits||0)===0&&(live.homeHits||0)===0)return;
+      var conf=Math.max(gp.pred.aProb,gp.pred.hProb);
+      var predicted=gp.pred.aProb>=50?gp.away:gp.home;
+      var actual=live.awayScore>live.homeScore?gp.away:live.homeScore>live.awayScore?gp.home:'TIE';
+      if(actual==='TIE')return;
+      var confTier=conf>=65?'high':conf>=55?'lean':'tossup';
+      t.games.push({
+        key:key,date:dk,away:gp.away,home:gp.home,
+        predicted:predicted,conf:conf,confTier:confTier,
+        actualWinner:actual,awayScore:live.awayScore,homeScore:live.homeScore,
+        correct:predicted===actual
+      });
+    });
+  }
+
+  // Store batter HR predictions
+  if(data.batters){
+    data.batters.forEach(function(b){
+      if(!b.gs)return;
+      var hrKey=dk+'_hr_'+b.id+'_'+b.gamePk;
+      if(!existingBatterKeys.has(hrKey)){
+        var hrTier=+b.hrPct>=12?'fire':+b.hrPct>=7?'warm':+b.hrPct>=4?'mild':'cold';
+        t.hr.push({
+          key:hrKey,date:dk,name:b.name,team:b.team,
+          pct:+b.hrPct,tier:hrTier,
+          hadHR:b.gs.hr>0,
+          gameLine:b.gs.h+'-'+b.gs.ab+(b.gs.hr>0?', '+b.gs.hr+' HR':'')
+        });
+      }
+      var hitKey=dk+'_hit_'+b.id+'_'+b.gamePk;
+      if(!existingBatterKeys.has(hitKey)){
+        var hitTier=+b.hitPct>=78?'fire':+b.hitPct>=72?'warm':+b.hitPct>=65?'mild':'cold';
+        t.hits.push({
+          key:hitKey,date:dk,name:b.name,team:b.team,
+          pct:+b.hitPct,tier:hitTier,
+          hadHit:b.gs.h>0,
+          gameLine:b.gs.h+'-'+b.gs.ab
+        });
+      }
+    });
+  }
+
+  // Prune older than 60 days
+  var cutoff=new Date();cutoff.setDate(cutoff.getDate()-60);var cutStr=dateStr(cutoff);
+  t.games=t.games.filter(function(g){return g.date>=cutStr});
+  t.hr=t.hr.filter(function(b){return b.date>=cutStr});
+  t.hits=t.hits.filter(function(b){return b.date>=cutStr});
+
+  saveTrack(t);
+}
+
+// ===== Track Record Renderer =====
+var trackTab='games';
+function setTrackTab(tab){trackTab=tab;render();}
+
+function calcStreak(items,field){
+  if(!items.length)return{type:'-',count:0};
+  var last=items[items.length-1][field];
+  var count=0;
+  for(var i=items.length-1;i>=0;i--){
+    if(items[i][field]===last)count++;else break;
+  }
+  return{type:last?'W':'L',count:count};
+}
+
+function renderTrackRecord(){
+  var t=loadTrack();
+  var h='';
+
+  // Sub-tabs
+  h+='<div class="tr-tabs">';
+  h+='<button class="tr-tab'+(trackTab==='games'?' act':'')+'" onclick="setTrackTab(\'games\')">Games</button>';
+  h+='<button class="tr-tab'+(trackTab==='hr'?' act':'')+'" onclick="setTrackTab(\'hr\')">HR</button>';
+  h+='<button class="tr-tab'+(trackTab==='hits'?' act':'')+'" onclick="setTrackTab(\'hits\')">Hits</button>';
+  h+='</div>';
+
+  if(trackTab==='games'){
+    var items=t.games.slice().reverse();
+    var total=items.length;
+    if(total===0){return h+'<div class="tr-empty">No game predictions tracked yet.<br>Results are saved automatically when games finish.</div>';}
+    var correct=items.filter(function(g){return g.correct}).length;
+    var wrong=total-correct;
+    var pct=total>0?((correct/total)*100).toFixed(1):'0.0';
+    var streak=calcStreak(t.games,'correct');
+
+    // Confidence tiers
+    var tiers={high:{c:0,w:0},lean:{c:0,w:0},tossup:{c:0,w:0}};
+    items.forEach(function(g){var tier=tiers[g.confTier]||tiers.tossup;if(g.correct)tier.c++;else tier.w++;});
+
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:15px;font-weight:700">Game predictions</div><button class="tr-reset" onclick="if(confirm(\'Reset all track record data?\')){resetTrack();render()}">Reset</button></div>';
+    h+='<div class="tr-metrics">';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:'+((+pct)>=60?'var(--grn)':(+pct)>=50?'var(--acc)':'var(--red)')+'">'+pct+'%</div><div class="tr-metric-lbl">Win/Loss ('+correct+'/'+total+')</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+total+'</div><div class="tr-metric-lbl">Games tracked</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:'+(streak.type==='W'?'var(--grn)':'var(--red)')+'">'+streak.type+streak.count+'</div><div class="tr-metric-lbl">Streak</div></div>';
+    var days=new Set(items.map(function(g){return g.date}));
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+days.size+'</div><div class="tr-metric-lbl">Days tracked</div></div>';
+    h+='</div>';
+
+    h+='<div class="tr-conf-grid">';
+    var tierLabels={high:'Strong (65%+)',lean:'Lean (55-64%)',tossup:'Toss-up (<55%)'};
+    ['high','lean','tossup'].forEach(function(k){
+      var ti=tiers[k];var tt=ti.c+ti.w;var tp=tt>0?((ti.c/tt)*100).toFixed(1):'0.0';
+      h+='<div class="tr-conf"><div class="tr-conf-lbl">'+tierLabels[k]+'</div><div class="tr-conf-val" style="color:'+(tt===0?'var(--tx3)':(+tp)>=60?'var(--grn)':(+tp)>=50?'var(--acc)':'var(--red)')+'">'+tp+'%</div><div class="tr-conf-sub">'+ti.c+'/'+tt+'</div></div>';
+    });
+    // Overall
+    h+='<div class="tr-conf"><div class="tr-conf-lbl">Overall</div><div class="tr-conf-val" style="color:'+((+pct)>=60?'var(--grn)':(+pct)>=50?'var(--acc)':'var(--red)')+'">'+pct+'%</div><div class="tr-conf-sub">'+correct+'/'+total+'</div></div>';
+    h+='</div>';
+
+    h+='<div class="tr-section">Recent results ('+Math.min(items.length,50)+' games)'+
+      (streak.count>=2?'<span class="tr-streak tr-streak-'+streak.type.toLowerCase()+'">'+streak.type+streak.count+'</span>':'')+'</div>';
+    h+='<div class="tr-list">';
+    items.slice(0,50).forEach(function(g){
+      h+='<div class="tr-item">';
+      h+=teamLogo(g.away,'tm-logo-sm');
+      h+='<div class="tr-item-info"><div class="tr-item-main">'+g.away+' '+g.awayScore+' - '+g.home+' '+g.homeScore+'</div>';
+      h+='<div class="tr-item-sub">'+g.date+' &middot; Picked '+g.predicted+' ('+g.confTier.toUpperCase()+' '+g.conf+'%)</div></div>';
+      h+=teamLogo(g.home,'tm-logo-sm');
+      h+='<div class="tr-item-badge '+(g.correct?'tr-hit':'tr-miss')+'">'+(g.correct?'&#10003; HIT':'&#10007; MISS')+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+
+  } else if(trackTab==='hr'){
+    var items=t.hr.slice().reverse();
+    var total=items.length;
+    if(total===0){return h+'<div class="tr-empty">No HR predictions tracked yet.<br>Results are saved automatically when games finish.</div>';}
+    var hit=items.filter(function(b){return b.hadHR}).length;
+    var pct=total>0?((hit/total)*100).toFixed(1):'0.0';
+
+    // Top picks: tier fire or warm
+    var topItems=items.filter(function(b){return b.tier==='fire'||b.tier==='warm'});
+    var topHit=topItems.filter(function(b){return b.hadHR}).length;
+    var topTotal=topItems.length;
+    var topPct=topTotal>0?((topHit/topTotal)*100).toFixed(1):'0.0';
+
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:15px;font-weight:700">HR predictions</div><button class="tr-reset" onclick="if(confirm(\'Reset all track record data?\')){resetTrack();render()}">Reset</button></div>';
+    h+='<div class="tr-metrics">';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:var(--red)">'+hit+'</div><div class="tr-metric-lbl">HRs called</div><div class="tr-metric-sub">of '+total+' batters</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+total+'</div><div class="tr-metric-lbl">Batters tracked</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:var(--acc)">'+topPct+'%</div><div class="tr-metric-lbl">Top picks (7%+)</div><div class="tr-metric-sub">'+topHit+'/'+topTotal+'</div></div>';
+    var days=new Set(items.map(function(b){return b.date}));
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+days.size+'</div><div class="tr-metric-lbl">Days tracked</div></div>';
+    h+='</div>';
+
+    // Tier breakdown
+    h+='<div class="tr-conf-grid">';
+    var tierMap={fire:{c:0,t:0,lbl:'Fire (12%+)'},warm:{c:0,t:0,lbl:'Warm (7-11%)'},mild:{c:0,t:0,lbl:'Mild (4-6%)'},cold:{c:0,t:0,lbl:'Cold (<4%)'}};
+    items.forEach(function(b){var ti=tierMap[b.tier]||tierMap.cold;ti.t++;if(b.hadHR)ti.c++;});
+    ['fire','warm','mild','cold'].forEach(function(k){
+      var ti=tierMap[k];var tp=ti.t>0?((ti.c/ti.t)*100).toFixed(1):'0.0';
+      h+='<div class="tr-conf"><div class="tr-conf-lbl">'+ti.lbl+'</div><div class="tr-conf-val" style="color:'+(ti.t===0?'var(--tx3)':'var(--tx)')+'">'+ti.c+'</div><div class="tr-conf-sub">'+ti.c+'/'+ti.t+(ti.t>0?' ('+tp+'%)':'')+'</div></div>';
+    });
+    h+='</div>';
+
+    h+='<div class="tr-section">Recent HR results ('+Math.min(items.length,50)+')</div>';
+    h+='<div class="tr-list">';
+    items.slice(0,50).forEach(function(b){
+      h+='<div class="tr-item">';
+      h+=teamLogo(b.team,'tm-logo-sm');
+      h+='<div class="tr-item-info"><div class="tr-item-main">'+b.name+' <span style="font-size:11px;color:var(--tx3);font-weight:400">'+b.pct+'%</span></div>';
+      h+='<div class="tr-item-sub">'+b.date+' &middot; '+b.team+' &middot; '+b.gameLine+'</div></div>';
+      h+='<div class="tr-item-badge '+(b.hadHR?'tr-hit':'tr-miss')+'">'+(b.hadHR?'&#10003; HR':'No HR')+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+
+  } else if(trackTab==='hits'){
+    var items=t.hits.slice().reverse();
+    var total=items.length;
+    if(total===0){return h+'<div class="tr-empty">No hit predictions tracked yet.<br>Results are saved automatically when games finish.</div>';}
+    var hit=items.filter(function(b){return b.hadHit}).length;
+    var pct=total>0?((hit/total)*100).toFixed(1):'0.0';
+
+    // Top picks: 70%+
+    var topItems=items.filter(function(b){return b.pct>=70});
+    var topHit=topItems.filter(function(b){return b.hadHit}).length;
+    var topTotal=topItems.length;
+    var topPct=topTotal>0?((topHit/topTotal)*100).toFixed(1):'0.0';
+
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:15px;font-weight:700">Hit predictions</div><button class="tr-reset" onclick="if(confirm(\'Reset all track record data?\')){resetTrack();render()}">Reset</button></div>';
+    h+='<div class="tr-metrics">';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:var(--grn)">'+pct+'%</div><div class="tr-metric-lbl">Got a hit</div><div class="tr-metric-sub">'+hit+'/'+total+'</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+total+'</div><div class="tr-metric-lbl">Batters tracked</div></div>';
+    h+='<div class="tr-metric"><div class="tr-metric-val" style="color:var(--acc)">'+topPct+'%</div><div class="tr-metric-lbl">Top picks (70%+)</div><div class="tr-metric-sub">'+topHit+'/'+topTotal+'</div></div>';
+    var days=new Set(items.map(function(b){return b.date}));
+    h+='<div class="tr-metric"><div class="tr-metric-val">'+days.size+'</div><div class="tr-metric-lbl">Days tracked</div></div>';
+    h+='</div>';
+
+    // Tier breakdown
+    h+='<div class="tr-conf-grid">';
+    var tierMap={fire:{c:0,t:0,lbl:'Hot (78%+)'},warm:{c:0,t:0,lbl:'Likely (72-77%)'},mild:{c:0,t:0,lbl:'Even (65-71%)'},cold:{c:0,t:0,lbl:'Lean no (<65%)'}};
+    items.forEach(function(b){var ti=tierMap[b.tier]||tierMap.cold;ti.t++;if(b.hadHit)ti.c++;});
+    ['fire','warm','mild','cold'].forEach(function(k){
+      var ti=tierMap[k];var tp=ti.t>0?((ti.c/ti.t)*100).toFixed(1):'0.0';
+      h+='<div class="tr-conf"><div class="tr-conf-lbl">'+ti.lbl+'</div><div class="tr-conf-val" style="color:'+(ti.t===0?'var(--tx3)':'var(--tx)')+'">'+tp+'%</div><div class="tr-conf-sub">'+ti.c+'/'+ti.t+'</div></div>';
+    });
+    h+='</div>';
+
+    h+='<div class="tr-section">Recent hit results ('+Math.min(items.length,50)+')</div>';
+    h+='<div class="tr-list">';
+    items.slice(0,50).forEach(function(b){
+      h+='<div class="tr-item">';
+      h+=teamLogo(b.team,'tm-logo-sm');
+      h+='<div class="tr-item-info"><div class="tr-item-main">'+b.name+' <span style="font-size:11px;color:var(--tx3);font-weight:400">'+b.pct+'%</span></div>';
+      h+='<div class="tr-item-sub">'+b.date+' &middot; '+b.team+' &middot; '+b.gameLine+'</div></div>';
+      h+='<div class="tr-item-badge '+(b.hadHit?'tr-hit':'tr-miss')+'">'+(b.hadHit?'&#10003; HIT':'&#10007; MISS')+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  return h;
 }
 
 // ===== Core UI =====
@@ -417,7 +684,14 @@ function updateDateUI(){
   document.getElementById('dateSub').textContent=diff===0?'Today':diff===1?'Tomorrow':diff===-1?'Yesterday':diff>0?diff+' days ahead':Math.abs(diff)+' days ago';
 }
 function changeDate(delta){currentDate=new Date(currentDate.getTime()+delta*864e5);updateDateUI();loadData()}
-function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(function(b){b.classList.toggle('act',b.dataset.m===m)});render()}
+function setMode(m){mode=m;document.querySelectorAll('.mbtn').forEach(function(b){b.classList.toggle('act',b.dataset.m===m)});
+  var isRecord=m==='record';
+  document.querySelector('.date-nav').style.display=isRecord?'none':'';
+  document.getElementById('acc30Bar').style.display=isRecord?'none':'';
+  document.getElementById('recordBar').style.display=isRecord?'none':'';
+  document.querySelector('.stabs').style.display=isRecord?'none':'';
+  document.getElementById('refreshBar').style.display=isRecord?'none':'';
+  render()}
 function setSub(s){sub_=s;document.querySelectorAll('.stab').forEach(function(b){b.classList.toggle('act',b.dataset.s===s)});render()}
 
 function hrT(p){p=+p;return p>=12?'f':p>=7?'h':p>=4?'o':'c'}
@@ -913,6 +1187,7 @@ function updateModelBadge(){
 
 function render(){
   var el=document.getElementById('out');
+  if(mode==='record'){el.innerHTML=renderTrackRecord();return}
   if(!data){el.innerHTML='<div class="ld"><div class="sp"></div>Loading predictions...</div>';return}
   if(!data.gamePreds||!data.gamePreds.length){el.innerHTML='<div class="empty"><h3>No games on this date</h3><p>Use arrows to navigate</p></div>';return}
   renderRecordBar();
